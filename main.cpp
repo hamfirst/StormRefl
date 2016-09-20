@@ -25,15 +25,16 @@ class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
 public:
 
 public:
-  StormReflVisitor(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedClass> & class_data)
+  StormReflVisitor(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedDataClass> & class_data, std::vector<ReflectedFunctionalClass> & class_funcs)
     : m_CompilerInstance(compiler_instance), 
       m_ASTContext(compiler_instance.getASTContext()), 
       m_SourceManager(compiler_instance.getSourceManager()), 
       m_SourceFile(source_file), 
-      m_ClassData(class_data)
+      m_ClassData(class_data),
+      m_ClassFuncs(class_funcs)
   { }
 
-  bool VisitCXXRecordDecl(CXXRecordDecl *decl) 
+  bool VisitCXXRecordDecl(CXXRecordDecl * decl) 
   {
     if (decl->isLocalClass() || decl->isTemplateDecl() || decl->isCompleteDefinition() == false)
     {
@@ -52,6 +53,13 @@ public:
       return true;
     }
 
+    ProcessDataClass(decl);
+    ProcessFunctionClass(decl);
+    return true;
+  }
+
+  void ProcessDataClass(CXXRecordDecl * decl)
+  {
     auto decl_name = std::string(decl->getName());
 
     bool is_reflectable = false;
@@ -69,7 +77,7 @@ public:
           }
 
           auto init_expr = var_decl->getInit();
-          
+
           bool is_true = false;
           if (init_expr->EvaluateAsBooleanCondition(is_true, m_ASTContext))
           {
@@ -82,12 +90,12 @@ public:
         }
       }
     }
-    
+
     if (is_reflectable)
     {
       //printf("Class: %s\n", decl_name.c_str());
 
-      ReflectedClass class_data = { decl_name };
+      ReflectedDataClass class_data = { decl_name };
 
       for (const auto & base : decl->bases())
       {
@@ -97,7 +105,7 @@ public:
 
       bool accessible = decl->isStruct() ? true : false;
 
-      for(auto & class_decl : decl->decls())
+      for (auto & class_decl : decl->decls())
       {
         auto access_spec = dyn_cast<AccessSpecDecl>(class_decl);
         if (access_spec)
@@ -107,7 +115,7 @@ public:
         }
 
         auto field = dyn_cast<FieldDecl>(class_decl);
-        if(field)
+        if (field)
         {
           if (!accessible)
           {
@@ -154,8 +162,107 @@ public:
 
       m_ClassData.emplace_back(class_data);
     }
+  }
 
-    return true;
+  void ProcessFunctionClass(CXXRecordDecl * decl)
+  {
+    auto decl_name = std::string(decl->getName());
+
+    bool is_functional = false;
+    for (const auto & sub_decl : decl->decls())
+    {
+      auto var_decl = dyn_cast<VarDecl>(sub_decl);
+      if (var_decl)
+      {
+        if (var_decl->isStaticDataMember() && var_decl->getNameAsString() == "is_functional" && var_decl->hasInit())
+        {
+          auto qual_type = var_decl->getType();
+          if (qual_type.getAsString() != "const _Bool")
+          {
+            continue;
+          }
+
+          auto init_expr = var_decl->getInit();
+
+          bool is_true = false;
+          if (init_expr->EvaluateAsBooleanCondition(is_true, m_ASTContext))
+          {
+            if (is_true)
+            {
+              is_functional = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    if (is_functional)
+    {
+      ReflectedFunctionalClass class_data = { decl_name };
+
+      for (const auto & base : decl->bases())
+      {
+        class_data.m_Base = base.getType().getBaseTypeIdentifier()->getName();
+        break;
+      }
+
+      bool accessible = decl->isStruct() ? true : false;
+
+      for (auto & class_decl : decl->decls())
+      {
+        auto access_spec = dyn_cast<AccessSpecDecl>(class_decl);
+        if (access_spec)
+        {
+          accessible = access_spec->getAccess() == AS_public;
+          continue;
+        }
+
+        auto method = dyn_cast<CXXMethodDecl>(class_decl);
+        if (method)
+        {
+          if (!accessible)
+          {
+            continue;
+          }
+
+          bool ignore_method = true;
+          if (method->hasAttrs())
+          {
+            for (const auto & attr : method->getAttrs())
+            {
+              auto annotation = dyn_cast<AnnotateAttr>(attr);
+              if (annotation)
+              {
+                auto annotation_str = std::string(annotation->getAnnotation());
+                if (annotation_str == "refl_func")
+                {
+                  ignore_method = false;
+                  break;
+                }
+              }
+            }
+          }
+
+          if (ignore_method)
+          {
+            continue;
+          }
+
+          ReflectedFunc func = { method->getName() };
+          func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext);
+
+          for (auto param : method->parameters())
+          {
+            func.m_Params.emplace_back(ReflectedParam{ param->getName(), clang::TypeName::getFullyQualifiedName(param->getType(), m_ASTContext) });
+          }
+
+          class_data.m_Funcs.emplace_back(std::move(func));
+        }
+      }
+
+      m_ClassFuncs.emplace_back(class_data);
+    }
   }
 
 private:
@@ -165,14 +272,15 @@ private:
 
   std::string m_SourceFile;
 
-  std::vector<ReflectedClass> & m_ClassData;
+  std::vector<ReflectedDataClass> & m_ClassData;
+  std::vector<ReflectedFunctionalClass> & m_ClassFuncs;
 };
 
 class StormReflASTConsumer : public ASTConsumer 
 {
 public:
-  StormReflASTConsumer(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedClass> & class_data)
-    : m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data))
+  StormReflASTConsumer(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedDataClass> & class_data, std::vector<ReflectedFunctionalClass> & class_funcs)
+    : m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data, class_funcs))
   { }
 
   virtual void HandleTranslationUnit(ASTContext & context) 
@@ -256,7 +364,7 @@ public:
       }
     }
 
-    OutputReflectedFile(m_SourceFile, m_ClassData, m_Includes);
+    OutputReflectedFile(m_SourceFile, m_ClassFuncs, m_ClassData, m_Includes);
 
     m_Includes.clear();
     m_ClassData.clear();
@@ -265,14 +373,15 @@ public:
 
   virtual std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance & compiler_instance, StringRef) override
   {
-    return std::make_unique<StormReflASTConsumer>(compiler_instance, m_SourceFile, m_ClassData);
+    return std::make_unique<StormReflASTConsumer>(compiler_instance, m_SourceFile, m_ClassData, m_ClassFuncs);
   }
 
 private:
 
   std::string m_SourceFile;
   std::vector<std::string> m_Includes;
-  std::vector<ReflectedClass> m_ClassData;
+  std::vector<ReflectedDataClass> m_ClassData;
+  std::vector<ReflectedFunctionalClass> m_ClassFuncs;
 };
 
 int main(int argc, const char **argv) 

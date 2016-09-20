@@ -13,12 +13,13 @@ inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
   while (true)
   {
     if (c == ' ' ||
-      c == '\n' ||
-      c == '\r' ||
-      c == '\t' ||
-      c == 0)
+        c == '\n' ||
+        c == '\r' ||
+        c == '\t' ||
+        c == 0)
     {
       str++;
+      c = *str;
     }
     else
     {
@@ -115,8 +116,9 @@ inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, cons
           char utf8[MB_LEN_MAX];
           std::mbstate_t state{};
 
-          int len = std::wcrtomb(utf8, val, &state);
-          for (int index = 0; index < len; index++)
+          std::size_t len;
+          wcrtomb_s(&len, utf8, val, &state);
+          for (std::size_t index = 0; index < len; index++)
           {
             hash = crc32additive(hash, utf8[index]);
           }
@@ -132,8 +134,15 @@ inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, cons
     {
       str++;
       result = str;
-      return hash;
+      hash = crc32end(hash);
+      return true;
     }
+    else
+    {
+      hash = crc32additive(hash, *str);
+    }
+
+    str++;
   }
 }
 
@@ -231,17 +240,17 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
 
 inline bool StormReflJsonParseOverTrue(const char * str, const char *& result)
 {
-  StormReflJsonMatchStr(str, result, "true");
+  return StormReflJsonMatchStr(str, result, "true");
 }
 
 inline bool StormReflJsonParseOverFalse(const char * str, const char *& result)
 {
-  StormReflJsonMatchStr(str, result, "false");
+  return StormReflJsonMatchStr(str, result, "false");
 }
 
 inline bool StormReflJsonParseOverNull(const char * str, const char *& result)
 {
-  StormReflJsonMatchStr(str, result, "null");
+  return StormReflJsonMatchStr(str, result, "null");
 }
 
 inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
@@ -358,9 +367,66 @@ struct StormReflJson
 };
 
 
+
 template <class T>
 struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::value>::type>
 {
+  template <class StringBuilder>
+  static void Encode(const T & t, StringBuilder & sb)
+  {
+    sb += '{';
+    
+    auto field_iterator = [&](auto f)
+    {
+      sb += '\"';
+      sb += f.GetName();
+      sb += "\":";
+
+      StormReflJson<std::decay_t<decltype(f.Get())>>::Encode(f.Get(), sb);
+      if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
+      {
+        sb += ',';
+      }
+    };
+
+    StormReflVisitEach(t, field_iterator);
+    sb += '}';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T & t, StringBuilder & sb, int indent)
+  {
+    sb += "{\n";
+
+    auto field_iterator = [&](auto f)
+    {
+      StormReflEncodeIndent(indent + 1, sb);
+      sb += '\"';
+      sb += f.GetName();
+      sb += "\" : ";
+
+      StormReflJson<std::decay_t<decltype(f.Get())>>::Encode(f.Get(), sb);
+      if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
+      {
+        sb += ",\n";
+      }
+      else
+      {
+        sb += '\n';
+      }
+    };
+
+    StormReflEncodeIndent(indent, sb);
+    StormReflVisitEach(t, field_iterator);
+    sb += '}';
+  }
+
+  template <class T, class StringBuilder>
+  void StormReflEncodeJson(const T & t, StringBuilder & sb)
+  {
+    StormReflJson<T>::Encode(t, sb);
+  }
+
   static bool Parse(T & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -369,6 +435,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       return false;
     }
 
+    str++;
     while (true)
     {
       StormReflJsonAdvanceWhiteSpace(str);
@@ -391,6 +458,8 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       {
         return false;
       }
+
+      str++;
 
       StormReflJsonAdvanceWhiteSpace(str);
       bool parsed_field = false;
@@ -416,9 +485,16 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       }
 
       StormReflJsonAdvanceWhiteSpace(str);
-      if (*str != '}' || *str != ',')
+      if (*str != '}')
       {
-        return false;
+        if (*str != ',')
+        {
+          return false;
+        }
+        else
+        {
+          str++;
+        }
       }
     }
   }
@@ -427,6 +503,29 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 template <class T>
 struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::type>
 {
+  template <class StringBuilder>
+  static void Encode(const T & t, StringBuilder & sb)
+  {
+    char buffer[1024];
+
+    if (std::is_unsigned<T>::value)
+    {
+      snprintf(buffer, sizeof(buffer), "%llu", (uint64_t)t);
+    }
+    else
+    {
+      snprintf(buffer, sizeof(buffer), "%lli", (int64_t)t);
+    }
+
+    sb += buffer;
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
+  }
+
   template <class IntType, class ParseType = T>
   static IntType ParseDigits(const char * & str, bool negative)
   {
@@ -621,7 +720,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
       val = ApplyExponent(val, exp, negative, fractional_part);
     }
 
-    t = static_cast<T>(negative ? -val : val);
+    t = negative ? -static_cast<T>(val) : static_cast<T>(val);
     return true;
   }
 };
@@ -629,6 +728,21 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
 template <class T>
 struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value>::type>
 {
+  template <class StringBuilder>
+  static void Encode(const T & t, StringBuilder & sb)
+  {
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%f", t);
+
+    sb += buffer;
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
+  }
+
   static bool Parse(T & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -644,8 +758,14 @@ struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value
       return false;
     }
 
+    while (*str >= '0' && *str <= '9')
+    {
+      str++;
+    }
+
     if (*str == '.')
     {
+      str++;
       while (*str >= '0' && *str <= '9')
       {
         str++;
@@ -662,7 +782,8 @@ struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value
       }
     }
 
-    t = strtod(start_str, &result);
+    char * bs;
+    t = static_cast<T>(strtod(start, &bs));
     result = str;
 
     return true;
@@ -672,6 +793,18 @@ struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value
 template <>
 struct StormReflJson<bool, void>
 {
+  template <class StringBuilder>
+  static void Encode(const bool & t, StringBuilder & sb)
+  {
+    sb += t ? "true" : "false";
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const bool & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
+  }
+
   static bool Parse(bool & t, const char * str, const char *& result)
   {
     if (StormReflJsonMatchStr(str, result, "true"))
@@ -690,4 +823,38 @@ struct StormReflJson<bool, void>
     }
   }
 };
+
+template <class StringBuilder>
+void StormReflEncodeIndent(int indent, StringBuilder & sb)
+{
+  while (indent > 0)
+  {
+    sb += "  ";
+    indent--;
+  }
+}
+
+template <class T, class StringBuilder>
+void StormReflEncodeJson(const T & t, StringBuilder & sb)
+{
+  StormReflJson<T>::Encode(t, sb);
+}
+
+template <class T, class StringBuilder>
+void StormReflEncodePrettyJson(const T & t, StringBuilder & sb)
+{
+  StormReflJson<T>::EncodePretty(t, sb, 0);
+}
+
+template <class T>
+bool StormReflParseJson(T & t, const char * str, const char *& result)
+{
+  return StormReflJson<T>::Parse(t, str, result);
+}
+
+template <class T>
+bool StormReflParseJson(T & t, const char * str)
+{
+  return StormReflJson<T>::Parse(t, str, str);
+}
 

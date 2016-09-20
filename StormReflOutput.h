@@ -3,6 +3,20 @@
 #include <string>
 #include <vector>
 
+struct ReflectedParam
+{
+  std::string m_Name;
+  std::string m_Type;
+};
+
+struct ReflectedFunc
+{
+  std::string m_Name;
+  std::string m_ReturnType;
+
+  std::vector<ReflectedParam> m_Params;
+};
+
 struct ReflectedField
 {
   std::string m_Name;
@@ -11,11 +25,20 @@ struct ReflectedField
   std::vector<std::string> m_Attrs;
 };
 
-struct ReflectedClass
+struct ReflectedDataClass
 {
   std::string m_Name;
   std::string m_Base;
   std::vector<ReflectedField> m_Fields;
 };
 
-void OutputReflectedFile(const std::string & filename, const std::vector<ReflectedClass> & class_data, const std::vector<std::string> & headers);
+struct ReflectedFunctionalClass
+{
+  std::string m_Name;
+  std::string m_Base;
+  std::vector<ReflectedFunc> m_Funcs;
+};
+
+void OutputReflectedFile(const std::string & filename, const std::vector<ReflectedFunctionalClass> & class_funcs, 
+                                                       const std::vector<ReflectedDataClass> & class_data, 
+                                                       const std::vector<std::string> & headers);

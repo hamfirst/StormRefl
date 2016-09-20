@@ -8,6 +8,49 @@
 template <class T>
 struct StormReflJson<std::vector<T>, void>
 {
+  template <class StringBuilder>
+  static void Encode(const std::vector<T> & t, StringBuilder & sb)
+  {
+    sb += '[';
+
+    std::size_t size = t.size();
+    for(std::size_t index = 0; index < size; index++)
+    {
+      StormReflJson<T>::Encode(f.Get(), sb);
+
+      if (index < size - 1)
+      {
+        sb += ',';
+      }
+    }
+
+    sb += ']';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const std::vector<T> & t, StringBuilder & sb, int indent)
+  {
+    sb += "[\n";
+
+    std::size_t size = t.size();
+    for (std::size_t index = 0; index < size; index++)
+    {
+      StormReflEncodeIndent(indent, sb);
+      StormReflJson<T>::EncodePretty(f.Get(), sb, indent + 1);
+
+      if (index < size - 1)
+      {
+        sb += ",\n";
+      }
+      else
+      {
+        sb += '\n';
+      }
+    }
+
+    sb += " ]";
+  }
+
   static bool Parse(std::vector<T> & t, const char * str, const char *& result)
   {
     if (*str != '[')
@@ -15,6 +58,7 @@ struct StormReflJson<std::vector<T>, void>
       return false;
     }
 
+    str++;
     while (true)
     {
       if (*str == ']')
@@ -47,6 +91,53 @@ struct StormReflJson<std::vector<T>, void>
 template <>
 struct StormReflJson<std::string, void>
 {
+  template <class StringBuilder>
+  static void Encode(const std::string & t, StringBuilder & sb)
+  {
+    sb += '\"';
+    for (auto c : t)
+    {
+      switch (c)
+      {
+      case '\"':
+        sb += "\\\"";
+        break;
+      case '\\':
+        sb += "\\\\";
+        break;
+      case '/':
+        sb += "\\/";
+        break;
+      case '\b':
+        sb += "\\b";
+        break;
+      case '\f':
+        sb += "\\f";
+        break;
+      case '\n':
+        sb += "\\n";
+        break;
+      case '\r':
+        sb += "\\r";
+        break;
+      case '\t':
+        sb += "\\r";
+        break;
+      default:
+        sb += c;
+        break;
+      }
+    }
+
+    sb += '\"';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const std::string & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
+  }
+
   static bool Parse(std::string & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -122,8 +213,9 @@ struct StormReflJson<std::string, void>
           char utf8[MB_LEN_MAX];
           std::mbstate_t state{};
 
-          int len = std::wcrtomb(utf8, val, &state);
-          for (int index = 0; index < len; index++)
+          std::size_t len;
+          wcrtomb_s(&len, utf8, val, &state);
+          for (std::size_t index = 0; index < len; index++)
           {
             t.push_back(utf8[index]);
           }
@@ -144,6 +236,7 @@ struct StormReflJson<std::string, void>
       else
       {
         t.push_back(*str);
+        str++;
       }
     }
   }

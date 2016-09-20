@@ -11,3 +11,9 @@ struct StormReflTypeInfo
 
 };
 
+template <typename T>
+struct StormReflFuncInfo
+{
+
+};
+
