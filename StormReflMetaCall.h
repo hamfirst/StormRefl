@@ -1,0 +1,37 @@
+#pragma once
+
+#include "StormReflMetaCallHelpers.h"
+
+template <typename C>
+constexpr static int StormReflGetFunctionCount()
+{
+  return StormReflFuncInfo<C>::funcs_n;
+}
+
+template <typename C, typename ReturnType, typename ... Args>
+constexpr static int StormReflGetMemberFunctionIndex(ReturnType(C::* ptr)(Args...))
+{
+  return StormReflMetaHelpers::StormReflGetCompareMemberFunctionPointerIndex<C, StormReflGetFunctionCount<C>() - 1>::Compare(member_ptr);
+}
+
+template <typename Serializer, typename C, typename ReturnType, typename ... Args>
+auto StormReflCallSerialize(Serializer & serializer, ReturnType(C::*func)(Args...))
+{
+  auto serialize_func = [&](Args && ... args)
+  {
+    StormReflMetaHelpers::StormReflCallSerialize(serializer, std::forward<Args>(args)...);
+  };
+
+  return serialize_func;
+}
+
+template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
+ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+{
+  auto call = [&](Args... args)
+  {
+    return (t.*func)(args...);
+  };
+
+  return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserialize<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
+}
