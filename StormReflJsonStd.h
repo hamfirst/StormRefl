@@ -1,0 +1,150 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+#include "StormReflJson.h"
+
+template <class T>
+struct StormReflJson<std::vector<T>, void>
+{
+  static bool Parse(std::vector<T> & t, const char * str, const char *& result)
+  {
+    if (*str != '[')
+    {
+      return false;
+    }
+
+    while (true)
+    {
+      if (*str == ']')
+      {
+        str++;
+        result = str;
+        return true;
+      }
+
+      t.emplace_back();
+      auto & elem = t.back();
+
+      if (StormReflJson<T>::Parse(elem, str, str) == false)
+      {
+        if (StormReflJsonParseOverValue(str, str) == false)
+        {
+          return false;
+        }
+      }
+
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str != ']' || *str != ',')
+      {
+        return false;
+      }
+    }
+  }
+};
+
+template <>
+struct StormReflJson<std::string, void>
+{
+  static bool Parse(std::string & t, const char * str, const char *& result)
+  {
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != '\"')
+    {
+      return false;
+    }
+
+    str++;
+    while (true)
+    {
+      if (*str == '\\')
+      {
+        str++;
+        switch (*str)
+        {
+        default:
+          return false;
+        case '\"':
+          t.push_back('\"');
+          str++;
+          break;
+        case '\\':
+          t.push_back('\\');
+          str++;
+          break;
+        case '/':
+          t.push_back('/');
+          str++;
+          break;
+        case 'b':
+          t.push_back('\b');
+          str++;
+          break;
+        case 'f':
+          t.push_back('\f');
+          str++;
+          break;
+        case 'n':
+          t.push_back('\n');
+          str++;
+          break;
+        case 'r':
+          t.push_back('\r');
+          str++;
+        case 't':
+          t.push_back('\t');
+          break;
+        case 'u':
+        {
+          wchar_t val = 0;
+          for (int index = 0; index < 4; index++)
+          {
+            val <<= 4;
+            if (*str >= '0' && *str <= '9')
+            {
+              val += *str - '0';
+            }
+            else if (*str >= 'a' && *str <= 'f')
+            {
+              val += *str - 'a' + 10;
+            }
+            else if (*str >= 'A' && *str <= 'F')
+            {
+              val += *str - 'A' + 10;
+            }
+            else
+            {
+              return false;
+            }
+          }
+
+          char utf8[MB_LEN_MAX];
+          std::mbstate_t state{};
+
+          int len = std::wcrtomb(utf8, val, &state);
+          for (int index = 0; index < len; index++)
+          {
+            t.push_back(utf8[index]);
+          }
+        }
+        break;
+        }
+      }
+      else if (*str == 0 || *str == '\n' || *str == '\r' || *str == '\b' || *str == '\t')
+      {
+        return false;
+      }
+      else if (*str == '\"')
+      {
+        str++;
+        result = str;
+        return true;
+      }
+      else
+      {
+        t.push_back(*str);
+      }
+    }
+  }
+};

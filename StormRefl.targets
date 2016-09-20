@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask TaskName="StormReflMsBuildTask.ParseHeader" AssemblyFile="$(SolutionDir)StormReflMsBuildTask\bin\Release\StormReflMsBuildTask.dll" />
+  
+  <Target Name="FilterHeaders" BeforeTargets="MetaHeaders">
+    <ItemGroup>
+      <FilteredHeaders Include="%(ClInclude.Identity)" Condition="$([MSBuild]::ValueOrDefault('%(filename)%(extension)', '').EndsWith('.refl.h'))"/>
+    </ItemGroup>
+  </Target>
+ 
+  <Target Name="MetaHeaders" 
+          Inputs="@(FilteredHeaders);..\Release\StormRefl.exe" 
+          Outputs="@(FilteredHeaders->'%(rootdir)%(directory)%(filename).meta%(extension)')" 
+          BeforeTargets="ClCompile">
+    <ParseHeader ExeFile="..\Release\StormRefl.exe" HeaderFiles="@(FilteredHeaders)" IncludeDirs="$(SolutionDir)External;$(SolutionDir)" />
+  </Target>
+</Project>
