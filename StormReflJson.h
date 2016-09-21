@@ -286,9 +286,16 @@ inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
     }
 
     StormReflJsonAdvanceWhiteSpace(str);
-    if (*str != '}' || *str != ',')
+    if (*str != '}')
     {
-      return false;
+      if (*str != ',')
+      {
+        return false;
+      }
+      else
+      {
+        str++;
+      }
     }
   }
 }
@@ -366,7 +373,103 @@ struct StormReflJson
   }
 };
 
+template <class T, int i>
+struct StormReflJson<T[i], void>
+{
+  template <class StringBuilder>
+  static void Encode(const T(&t)[i], StringBuilder & sb)
+  {
+    sb += '[';
 
+    for (int index = 0; index < i; index++)
+    {
+      if (index < i - 1)
+      {
+        StormReflJson<T>::Encode(t[index], sb);
+        sb += ',';
+      }
+    }
+
+    sb += ']';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T(&t)[i], StringBuilder & sb, int indent)
+  {
+    sb += "[\n";
+
+    for (int index = 0; index < i; index++)
+    {
+      StormReflEncodeIndent(indent + 1, sb);
+      StormReflJson<T>::EncodePretty(t[index], sb, indent + 1);
+      if (index < i - 1)
+      {
+        sb += ",\n";
+      }
+      else
+      {
+        sb += '\n';
+      }
+    };
+
+    StormReflEncodeIndent(indent, sb);
+    sb += ']';
+  }
+
+  static bool Parse(T(&t)[i], const char * str, const char *& result)
+  {
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != '[')
+    {
+      return false;
+    }
+
+    int index = 0;
+
+    str++;
+    while (true)
+    {
+      StormReflJsonAdvanceWhiteSpace(str);
+
+      if (*str == ']')
+      {
+        str++;
+        result = str;
+        return true;
+      }
+
+      if (index >= i)
+      {
+        if (StormReflJsonParseOverValue(str, str) == false)
+        {
+          return false;
+        }
+      }
+      else
+      {
+        if (StormReflJson<T>::Parse(t[index], str, str) == false)
+        {
+          return false;
+        }
+      }
+
+      index++;
+
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str != ']')
+      {
+        if (*str != ',')
+        {
+          return false;
+        }
+        else
+        {
+          str++;
+        }
+      }
+    }
+  }
+};
 
 template <class T>
 struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::value>::type>
@@ -382,7 +485,9 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       sb += f.GetName();
       sb += "\":";
 
-      StormReflJson<std::decay_t<decltype(f.Get())>>::Encode(f.Get(), sb);
+      using member_type = decltype(f)::member_type;
+
+      StormReflJson<member_type>::Encode(f.Get(), sb);
       if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
       {
         sb += ',';
@@ -405,7 +510,9 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       sb += f.GetName();
       sb += "\" : ";
 
-      StormReflJson<std::decay_t<decltype(f.Get())>>::Encode(f.Get(), sb);
+      using member_type = decltype(f)::member_type;
+
+      StormReflJson<member_type>::EncodePretty(f.Get(), sb, indent + 1);
       if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
       {
         sb += ",\n";
@@ -416,8 +523,8 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       }
     };
 
-    StormReflEncodeIndent(indent, sb);
     StormReflVisitEach(t, field_iterator);
+    StormReflEncodeIndent(indent, sb);
     sb += '}';
   }
 
@@ -467,8 +574,9 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 
       auto field_visitor = [&](auto f)
       {
-        auto & member = f.Get();
-        parsed_field = StormReflJson<std::decay_t<decltype(member)>>::Parse(member, str, result_str);
+        using member_type = decltype(f)::member_type;
+        member_type & member = f.Get();
+        parsed_field = StormReflJson<member_type>::Parse(member, str, result_str);
       };
 
       StormReflVisitField(t, field_visitor, field_name_hash);
@@ -500,23 +608,127 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
   }
 };
 
+
+template <class IntType, class ParseType>
+static IntType StormReflParseDigits(const char * & str, bool negative)
+{
+  if (negative && std::is_unsigned<ParseType>::value)
+  {
+    while (*str >= 0 && *str <= 9)
+    {
+      str++;
+    }
+
+    return 0;
+  }
+
+  IntType val = 0;
+  IntType max_val = std::numeric_limits<ParseType>::max() + (negative ? 1 : 0);
+  IntType max_pre_digit = (max_val / 10) + 1;
+
+  bool overflow = false;
+
+  while (*str >= '0' && *str <= '9')
+  {
+    if (val > max_pre_digit)
+    {
+      overflow = true;
+      break;
+    }
+
+    val *= 10;
+
+    IntType add_val = (*str) - '0';
+    if (val > max_val - add_val)
+    {
+      overflow = true;
+      break;
+    }
+
+    val += add_val;
+    str++;
+  }
+
+  if (overflow)
+  {
+    while (*str >= '0' && *str <= '9')
+    {
+      str++;
+    }
+
+    return max_val;
+  }
+
+  return val;
+}
+
+template <class T, class IntType>
+static IntType StormReflApplyExponent(IntType val, int8_t exp, bool negative, const char * fractional_str)
+{
+  if (exp == 1)
+  {
+    return val;
+  }
+
+  if (exp == 0)
+  {
+    return 1;
+  }
+
+  if (exp < 0)
+  {
+    return 0;
+  }
+
+  IntType max_val = std::numeric_limits<T>::max() + (negative ? 1 : 0);
+  IntType max_pre_digit = (max_val / 10) + 1;
+
+  bool overflow = false;
+  while (exp > 0)
+  {
+    if (val > max_pre_digit)
+    {
+      overflow = true;
+      break;
+    }
+
+    val *= 10;
+
+    IntType add_val;
+    if (fractional_str != nullptr && *fractional_str >= '0' && *fractional_str <= '9')
+    {
+      add_val = *fractional_str - '0';
+      fractional_str++;
+
+      if (val > max_val - add_val)
+      {
+        overflow = true;
+        break;
+      }
+
+      val += add_val;
+    }
+
+    exp--;
+  }
+
+  if (overflow)
+  {
+    return max_val;
+  }
+
+  return val;
+}
+
+
 template <class T>
-struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::type>
+struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value>::type>
 {
   template <class StringBuilder>
   static void Encode(const T & t, StringBuilder & sb)
   {
     char buffer[1024];
-
-    if (std::is_unsigned<T>::value)
-    {
-      snprintf(buffer, sizeof(buffer), "%llu", (uint64_t)t);
-    }
-    else
-    {
-      snprintf(buffer, sizeof(buffer), "%lli", (int64_t)t);
-    }
-
+    snprintf(buffer, sizeof(buffer), "%llu", (uint64_t)t);
     sb += buffer;
   }
 
@@ -526,115 +738,107 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
     Encode(t, sb);
   }
 
-  template <class IntType, class ParseType = T>
-  static IntType ParseDigits(const char * & str, bool negative)
+  static bool Parse(T & t, const char * str, const char *& result)
   {
-    if (negative && std::is_unsigned<ParseType>::value)
-    {
-      while (*str >= 0 && *str <= 9)
-      {
-        str++;
-      }
+    StormReflJsonAdvanceWhiteSpace(str);
+    bool negative;
+    int flow = 0;
 
-      return 0;
+    if (*str == '-')
+    {
+      negative = true;
+      str++;
+    }
+    else if (*str == '+')
+    {
+      negative = false;
+      str++;
+    }
+    else
+    {
+      negative = false;
     }
 
-    IntType val = 0;
-    IntType max_val = std::numeric_limits<ParseType>::max() + (negative ? 1 : 0);
-    IntType max_pre_digit = (max_val / 10) + 1;
-
-    bool overflow = false;
-
-    while (*str >= '0' && *str <= '9')
+    if (*str < '0' || *str > '9')
     {
-      if (val > max_pre_digit)
-      {
-        overflow = true;
-        break;
-      }
+      return false;
+    }
 
-      val *= 10;
-
-      IntType add_val = (*str) - '0';
-      if (val > max_val - add_val)
-      {
-        overflow = true;
-        break;
-      }
-
-      val += add_val;
+    while (*str == '0')
+    {
       str++;
     }
 
-    if (overflow)
+    T val = StormReflParseDigits<T, T>(str, negative);
+    const char * fractional_part = nullptr;
+
+    if (*str == '.')
     {
+      str++;
+      fractional_part = str;
+
       while (*str >= '0' && *str <= '9')
       {
         str++;
       }
-
-      return max_val;
     }
 
-    return val;
-  }
-
-  template <class IntType>
-  static IntType ApplyExponent(IntType val, int8_t exp, bool negative, const char * fractional_str)
-  {
-    if (exp == 1)
+    int8_t exp = 1;
+    if (*str == 'E' || *str == 'e')
     {
-      return val;
+      str++;
+
+      bool exp_negative = false;
+      if (*str == '-')
+      {
+        str++;
+        exp_negative = true;
+      }
+      else if (*str == '+')
+      {
+        str++;
+      }
+
+      if (*str < '0' || *str > '9')
+      {
+        return false;
+      }
+
+      uint8_t uexp = StormReflParseDigits<uint8_t, int8_t>(str, exp_negative);
+      exp = static_cast<int8_t>(exp_negative ? -uexp : uexp);
     }
 
-    if (exp == 0)
-    {
-      return 1;
-    }
-
+    result = str;
     if (exp < 0)
     {
-      return 0;
+      t = 0;
+      return true;
     }
-
-    IntType max_val = std::numeric_limits<T>::max() + (negative ? 1 : 0);
-    IntType max_pre_digit = (max_val / 10) + 1;
-
-    bool overflow = false;
-    while (exp > 0)
+    else if (exp > 1)
     {
-      if (val > max_pre_digit)
-      {
-        overflow = true;
-        break;
-      }
-
-      val *= 10;
-
-      IntType add_val;
-      if (fractional_str != nullptr && *fractional_str >= '0' && *fractional_str <= '9')
-      {
-        add_val = *fractional_str - '0';
-        fractional_str++;
-
-        if (val > max_val - add_val)
-        {
-          overflow = true;
-          break;
-        }
-
-        val += add_val;
-      }
-
-      exp--;
+      val = StormReflApplyExponent<T, T>(val, exp, negative, fractional_part);
     }
 
-    if (overflow)
-    {
-      return max_val;
-    }
+    t = negative ? 0 : val;
+    return true;
+  }
+};
 
-    return val;
+template <class T>
+struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && std::is_signed<T>::value>::type>
+{
+  template <class StringBuilder>
+  static void Encode(const T & t, StringBuilder & sb)
+  {
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%lli", (int64_t)t);
+    sb += buffer;
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
   }
 
   static bool Parse(T & t, const char * str, const char *& result)
@@ -670,7 +874,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
       str++;
     }
 
-    IntType val = ParseDigits<IntType>(str, negative);
+    IntType val = StormReflParseDigits<IntType, T>(str, negative);
     const char * fractional_part = nullptr;
 
     if (*str == '.')
@@ -705,7 +909,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
         return false;
       }
 
-      uint8_t uexp = ParseDigits<uint8_t, int8_t>(str, exp_negative);
+      uint8_t uexp = StormReflParseDigits<uint8_t, int8_t>(str, exp_negative);
       exp = static_cast<int8_t>(exp_negative ? -uexp : uexp);
     }
 
@@ -717,7 +921,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value>::typ
     }
     else if (exp > 1)
     {
-      val = ApplyExponent(val, exp, negative, fractional_part);
+      val = StormReflApplyExponent<T, IntType>(val, exp, negative, fractional_part);
     }
 
     t = negative ? -static_cast<T>(val) : static_cast<T>(val);
