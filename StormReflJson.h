@@ -15,8 +15,7 @@ inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
     if (c == ' ' ||
         c == '\n' ||
         c == '\r' ||
-        c == '\t' ||
-        c == 0)
+        c == '\t')
     {
       str++;
       c = *str;
@@ -161,6 +160,11 @@ inline bool StormReflJsonParseOverNumber(const char * str, const char *& result)
     return false;
   }
 
+  while (*str >= '0' && *str <= '9')
+  {
+    str++;
+  }
+
   if (*str == '.')
   {
     while (*str >= '0' && *str <= '9')
@@ -210,19 +214,19 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
       case 'r':
       case 't':
       case 'u':
-      {
-        for (int index = 0; index < 4; index++)
         {
-          bool valid = (*str >= '0' && *str <= '9') || (*str >= 'a' && *str <= 'f') || (*str >= 'A' && *str <= 'F');
-          if(!valid)
+          for (int index = 0; index < 4; index++)
           {
-            return false;
-          }
+            bool valid = (*str >= '0' && *str <= '9') || (*str >= 'a' && *str <= 'f') || (*str >= 'A' && *str <= 'F');
+            if(!valid)
+            {
+              return false;
+            }
 
-          str++;
+            str++;
+          }
         }
-      }
-      break;
+        break;
       }
     }
     else if (*str == 0 || *str == '\n' || *str == '\r' || *str == '\b' || *str == '\t')
@@ -234,6 +238,10 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
       str++;
       result = str;
       return true;
+    }
+    else
+    {
+      str++;
     }
   }
 }
@@ -260,8 +268,10 @@ inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
     return false;
   }
 
+  str++;
   while (true)
   {
+    StormReflJsonAdvanceWhiteSpace(str);
     if (*str == '}')
     {
       str++;
@@ -279,7 +289,10 @@ inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
     {
       return false;
     }
+    
+    str++;
 
+    StormReflJsonAdvanceWhiteSpace(str);
     if (StormReflJsonParseOverValue(str, str) == false)
     {
       return false;
@@ -307,6 +320,9 @@ inline bool StormReflJsonParseOverArray(const char * str, const char *& result)
     return false;
   }
 
+  str++;
+  StormReflJsonAdvanceWhiteSpace(str);
+
   while (true)
   {
     if (*str == ']')
@@ -322,9 +338,17 @@ inline bool StormReflJsonParseOverArray(const char * str, const char *& result)
     }
 
     StormReflJsonAdvanceWhiteSpace(str);
-    if (*str != ']' || *str != ',')
+    if (*str != ']')
     {
-      return false;
+      if (*str != ',')
+      {
+        return false;
+      }
+      else
+      {
+        str++;
+        StormReflJsonAdvanceWhiteSpace(str);
+      }
     }
   }
 }
@@ -383,9 +407,9 @@ struct StormReflJson<T[i], void>
 
     for (int index = 0; index < i; index++)
     {
+      StormReflJson<T>::Encode(t[index], sb);
       if (index < i - 1)
       {
-        StormReflJson<T>::Encode(t[index], sb);
         sb += ',';
       }
     }
