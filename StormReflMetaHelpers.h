@@ -17,6 +17,7 @@ namespace StormReflMetaHelpers
   };
 
   template <typename T, int i> struct StormReflCheckReflectable<T[i]> { static const bool value = false; };
+  template <typename T> struct StormReflCheckReflectable<T *> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<bool> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<int8_t> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<int16_t> { static const bool value = false; };

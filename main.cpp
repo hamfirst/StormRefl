@@ -48,7 +48,7 @@ public:
     }
 
     auto file_entry = m_SourceManager.getFileEntryForID(full_souce_loc.getFileID());
-    if (m_SourceFile != file_entry->getName())
+    if (file_entry == nullptr || m_SourceFile != file_entry->getName())
     {
       return true;
     }
@@ -122,7 +122,7 @@ public:
             continue;
           }
 
-          auto qual_type = field->getType();
+          auto qual_type = field->getType().getCanonicalType();
           auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext);
           auto name_str = std::string(field->getName());
 
@@ -280,15 +280,28 @@ class StormReflASTConsumer : public ASTConsumer
 {
 public:
   StormReflASTConsumer(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedDataClass> & class_data, std::vector<ReflectedFunctionalClass> & class_funcs)
-    : m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data, class_funcs))
+    : m_CompilerInstance(compiler_instance), m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data, class_funcs))
   { }
 
   virtual void HandleTranslationUnit(ASTContext & context) 
   {
-    m_Visitor->TraverseDecl(context.getTranslationUnitDecl());
+    if (m_CompilerInstance.hasDiagnostics())
+    {
+      if (m_CompilerInstance.getDiagnostics().hasUncompilableErrorOccurred())
+      {
+        return;
+      }
+    }
+
+    auto translation_unit = context.getTranslationUnitDecl();
+    if (translation_unit)
+    {
+      m_Visitor->TraverseDecl(translation_unit);
+    }
   }
 
 private:
+  CompilerInstance & m_CompilerInstance;
   std::unique_ptr<StormReflVisitor> m_Visitor;
 };
 
