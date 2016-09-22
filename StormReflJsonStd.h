@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "StormReflJson.h"
 
@@ -85,6 +86,71 @@ struct StormReflJson<std::vector<T>, void>
         return false;
       }
     }
+  }
+};
+
+template <class K, class T>
+struct StormReflJson<std::map<K, T>, void>
+{
+  template <class StringBuilder>
+  static void Encode(std::map<K, T> & t, StringBuilder & sb)
+  {
+    if (t.size() == 0)
+    {
+      sb += "{}";
+      return;
+    }
+
+    auto itr = t.begin();
+    sb += "{\"";
+    StormReflJson<K>::Encode(itr->first, sb);
+    sb += "\":";
+    StormReflJson<T>::Encode(itr->second, sb);
+    itr++;
+
+    while(itr != t.end())
+    {
+      sb += ",\"";
+      StormReflJson<K>::Encode(itr->first, sb);
+      sb += "\":";
+      StormReflJson<T>::Encode(itr->second, sb);
+      itr++;
+    }
+
+    sb += '}';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(std::map<K, T> & t, StringBuilder & sb, int indent)
+  {
+    if (t.size() == 0)
+    {
+      sb += "{}\n";
+      return;
+    }
+
+    auto itr = t.begin();
+    sb += "{\n";
+    StormReflEncodeIndent(indent + 1, sb); 
+    sb += \"";
+    StormReflJson<K>::Encode(itr->first, sb);
+    sb += "\":";
+    StormReflJson<T>::EncodePretty(itr->second, sb);
+    itr++;
+
+    while (itr != t.end())
+    {
+      sb += ",\n";
+      StormReflEncodeIndent(indent + 1, sb);
+      sb += \"";
+      StormReflJson<K>::Encode(itr->first, sb);
+      sb += "\":";
+      StormReflJson<T>::EncodePretty(itr->second, sb);
+      itr++;
+    }
+
+    StormReflEncodeIndent(indent, sb);
+    sb += '}';
   }
 };
 

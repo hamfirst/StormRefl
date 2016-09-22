@@ -15,8 +15,7 @@ inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
     if (c == ' ' ||
         c == '\n' ||
         c == '\r' ||
-        c == '\t' ||
-        c == 0)
+        c == '\t')
     {
       str++;
       c = *str;
