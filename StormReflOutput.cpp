@@ -63,7 +63,8 @@ fs::path RelativePath(const fs::path &path, const fs::path &relative_to)
 }
 
 void OutputReflectedFile(const std::string & filename, const std::vector<ReflectedFunctionalClass> & class_funcs, 
-                                                       const std::vector<ReflectedDataClass> & class_data,
+                                                       const std::vector<ReflectedDataClass> & class_data, 
+                                                       const std::vector<ReflectedEnum> & enum_data,
                                                        const std::vector<std::string> & headers)
 {
   auto cur_path = fs::canonical(fs::path(filename));
@@ -87,6 +88,17 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   }
 
   fprintf(fp, "\n\n");
+
+  for (auto & e : enum_data)
+  {
+    fprintf(fp, "template <>\n");
+    fprintf(fp, "struct StormReflEnumInfo<%s>\n", e.m_Name.c_str());
+    fprintf(fp, "{\n");
+    fprintf(fp, "  static constexpr int elems_n = %d;\n", e.m_Elems.size());
+    fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", e.m_Name.c_str());
+    fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(e.m_Name));
+    fprintf(fp, "};\n\n");
+  }
 
   for (auto & cl : class_data)
   {
@@ -113,6 +125,8 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  template <int N> struct annotations : public StormReflTypeInfo<MyBase>::annotations<N> {};\n");
     }
 
+    fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", cl.m_Name.c_str());
+    fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(cl.m_Name));
     fprintf(fp, "  static %s & GetDefault() { static %s def; return def; }\n", cl.m_Name.c_str(), cl.m_Name.c_str());
     fprintf(fp, "};\n\n");
 

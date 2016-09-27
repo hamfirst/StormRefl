@@ -25,13 +25,18 @@ class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
 public:
 
 public:
-  StormReflVisitor(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedDataClass> & class_data, std::vector<ReflectedFunctionalClass> & class_funcs)
+  StormReflVisitor(CompilerInstance & compiler_instance, 
+    const std::string & source_file, 
+    std::vector<ReflectedDataClass> & class_data, 
+    std::vector<ReflectedFunctionalClass> & class_funcs,
+    std::vector<ReflectedEnum> & enum_data)
     : m_CompilerInstance(compiler_instance), 
       m_ASTContext(compiler_instance.getASTContext()), 
       m_SourceManager(compiler_instance.getSourceManager()), 
       m_SourceFile(source_file), 
       m_ClassData(class_data),
-      m_ClassFuncs(class_funcs)
+      m_ClassFuncs(class_funcs),
+      m_Enums(enum_data)
   { }
 
   bool VisitCXXRecordDecl(CXXRecordDecl * decl) 
@@ -265,6 +270,59 @@ public:
     }
   }
 
+  bool VisitEnumDecl(EnumDecl * decl)
+  {
+    if (decl->isComplete() == false)
+    {
+      return true;
+    }
+
+    FullSourceLoc full_souce_loc(decl->getLocation(), m_SourceManager);
+    if (full_souce_loc.isInSystemHeader())
+    {
+      return true;
+    }
+
+    auto file_entry = m_SourceManager.getFileEntryForID(full_souce_loc.getFileID());
+    if (file_entry == nullptr || m_SourceFile != file_entry->getName())
+    {
+      return true;
+    }
+
+    bool ignore_enum = true;
+    if (decl->hasAttrs())
+    {
+      for (const auto & attr : decl->getAttrs())
+      {
+        auto annotation = dyn_cast<AnnotateAttr>(attr);
+        if (annotation)
+        {
+          auto annotation_str = std::string(annotation->getAnnotation());
+          if (annotation_str == "refl_enum")
+          {
+            ignore_enum = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (ignore_enum)
+    {
+      return true;
+    }
+
+    auto decl_name = std::string(decl->getName());
+    ReflectedEnum data = { decl_name, decl->isScoped(); };
+
+    for (auto && enum_elem : decl->enumerators())
+    {
+      data.m_Elems.push_back(enum_elem->getName());
+    }
+
+    m_Enums.push_back(data);
+  }
+
 private:
   CompilerInstance & m_CompilerInstance;
   ASTContext & m_ASTContext;
@@ -274,13 +332,18 @@ private:
 
   std::vector<ReflectedDataClass> & m_ClassData;
   std::vector<ReflectedFunctionalClass> & m_ClassFuncs;
+  std::vector<ReflectedEnum> & m_Enums;
 };
 
 class StormReflASTConsumer : public ASTConsumer 
 {
 public:
-  StormReflASTConsumer(CompilerInstance & compiler_instance, const std::string & source_file, std::vector<ReflectedDataClass> & class_data, std::vector<ReflectedFunctionalClass> & class_funcs)
-    : m_CompilerInstance(compiler_instance), m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data, class_funcs))
+  StormReflASTConsumer(CompilerInstance & compiler_instance, 
+    const std::string & source_file, 
+    std::vector<ReflectedDataClass> & class_data, 
+    std::vector<ReflectedFunctionalClass> & class_funcs,
+    std::vector<ReflectedEnum> & enum_data)
+    : m_CompilerInstance(compiler_instance), m_Visitor(std::make_unique<StormReflVisitor>(compiler_instance, source_file, class_data, class_funcs, enum_data))
   { }
 
   virtual void HandleTranslationUnit(ASTContext & context) 
@@ -377,7 +440,7 @@ public:
       }
     }
 
-    OutputReflectedFile(m_SourceFile, m_ClassFuncs, m_ClassData, m_Includes);
+    OutputReflectedFile(m_SourceFile, m_ClassFuncs, m_ClassData, m_EnumData, m_Includes);
 
     m_Includes.clear();
     m_ClassData.clear();
@@ -386,7 +449,7 @@ public:
 
   virtual std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance & compiler_instance, StringRef) override
   {
-    return std::make_unique<StormReflASTConsumer>(compiler_instance, m_SourceFile, m_ClassData, m_ClassFuncs);
+    return std::make_unique<StormReflASTConsumer>(compiler_instance, m_SourceFile, m_ClassData, m_ClassFuncs, m_EnumData);
   }
 
 private:
@@ -395,6 +458,7 @@ private:
   std::vector<std::string> m_Includes;
   std::vector<ReflectedDataClass> m_ClassData;
   std::vector<ReflectedFunctionalClass> m_ClassFuncs;
+  std::vector<ReflectedEnum> m_EnumData;
 };
 
 int main(int argc, const char **argv) 

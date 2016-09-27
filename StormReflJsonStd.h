@@ -132,7 +132,7 @@ struct StormReflJson<std::map<K, T>, void>
     auto itr = t.begin();
     sb += "{\n";
     StormReflEncodeIndent(indent + 1, sb); 
-    sb += \"";
+    sb += '\"';
     StormReflJson<K>::Encode(itr->first, sb);
     sb += "\":";
     StormReflJson<T>::EncodePretty(itr->second, sb);
@@ -142,7 +142,7 @@ struct StormReflJson<std::map<K, T>, void>
     {
       sb += ",\n";
       StormReflEncodeIndent(indent + 1, sb);
-      sb += \"";
+      sb += '\"';
       StormReflJson<K>::Encode(itr->first, sb);
       sb += "\":";
       StormReflJson<T>::EncodePretty(itr->second, sb);
