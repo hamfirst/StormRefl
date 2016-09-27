@@ -3,7 +3,7 @@
 #include <cwchar>
 
 #include "StormReflMetaFuncs.h"
-
+#include "StormReflMetaEnum.h"
 
 inline bool StormReflJsonParseOverValue(const char * str, const char *& result);
 
@@ -632,6 +632,52 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
   }
 };
 
+template <class T>
+struct StormReflJson<T, typename std::enable_if<std::is_enum<T>::value>::type>
+{
+  template <class StringBuilder>
+  static void Encode(const T & t, StringBuilder & sb)
+  {
+    sb += '\"';
+    sb += StormReflGetEnumAsString(t);
+    sb += '\"';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const T & t, StringBuilder & sb, int indent)
+  {
+    Encode(t, sb);
+  }
+
+  static bool Parse(T & t, const char * str, const char *& result)
+  {
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != '\"')
+    {
+      return false;
+    }
+
+    str++;
+    uint32_t hash = crc32begin();
+
+    while (*str != '\"')
+    {
+      if (*str == 0)
+      {
+        return false;
+      }
+
+      hash = crc32additive(hash, *str);
+      str++;
+    }
+
+    hash = crc32end(hash);
+    str++;
+    result = str;
+
+    return StormReflGetEnumFromHash(t, hash);
+  }
+};
 
 template <class IntType, class ParseType>
 static IntType StormReflParseDigits(const char * & str, bool negative)
