@@ -97,7 +97,21 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
     fprintf(fp, "  static constexpr int elems_n = %d;\n", e.m_Elems.size());
     fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", e.m_Name.c_str());
     fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(e.m_Name));
+    fprintf(fp, "  template <int N> struct elems { };\n");
     fprintf(fp, "};\n\n");
+
+    for (std::size_t index = 0; index < e.m_Elems.size(); index++)
+    {
+      auto & elem = e.m_Elems[index];
+
+      fprintf(fp, "template <>\n");
+      fprintf(fp, "struct StormReflEnumInfo<%s>::elems<%d>\n", e.m_Name.c_str(), index);
+      fprintf(fp, "{\n");
+      fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", elem.m_Name.c_str());
+      fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(elem.m_Name));
+      fprintf(fp, "  static constexpr auto GetValue() { return %s; }\n", elem.m_FullName.c_str());
+      fprintf(fp, "};\n\n");
+    }
   }
 
   for (auto & cl : class_data)

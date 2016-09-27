@@ -312,15 +312,18 @@ public:
       return true;
     }
 
-    auto decl_name = std::string(decl->getName());
-    ReflectedEnum data = { decl_name, decl->isScoped(); };
+    auto qual_type = decl->getTypeForDecl()->getLocallyUnqualifiedSingleStepDesugaredType();
+    auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext);
+
+    ReflectedEnum data = { type_str, decl->isScopedUsingClassTag() };
 
     for (auto && enum_elem : decl->enumerators())
     {
-      data.m_Elems.push_back(enum_elem->getName());
+      data.m_Elems.emplace_back(ReflectedEnumElem{ enum_elem->getName(), enum_elem->getQualifiedNameAsString() });
     }
 
     m_Enums.push_back(data);
+    return true;
   }
 
 private:

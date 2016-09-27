@@ -39,11 +39,17 @@ struct ReflectedFunctionalClass
   std::vector<ReflectedFunc> m_Funcs;
 };
 
+struct ReflectedEnumElem
+{
+  std::string m_Name;
+  std::string m_FullName;
+};
+
 struct ReflectedEnum
 {
   std::string m_Name;
   bool m_Scoped;
-  std::vector<std::string> m_Elems;
+  std::vector<ReflectedEnumElem> m_Elems;
 };
 
 void OutputReflectedFile(const std::string & filename, const std::vector<ReflectedFunctionalClass> & class_funcs, 
