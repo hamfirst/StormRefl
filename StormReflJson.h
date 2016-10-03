@@ -388,13 +388,53 @@ inline bool StormReflJsonParseOverValue(const char * str, const char *& result)
   return false;
 }
 
+template <class StringBuilder>
+void StormReflJsonEncodeString(const char * str, StringBuilder & sb)
+{
+  sb += '\"';
+  while (*str != 0)
+  {
+    switch (*str)
+    {
+    case '\"':
+      sb += "\\\"";
+      break;
+    case '\\':
+      sb += "\\\\";
+      break;
+    case '/':
+      sb += "\\/";
+      break;
+    case '\b':
+      sb += "\\b";
+      break;
+    case '\f':
+      sb += "\\f";
+      break;
+    case '\n':
+      sb += "\\n";
+      break;
+    case '\r':
+      sb += "\\r";
+      break;
+    case '\t':
+      sb += "\\r";
+      break;
+    default:
+      sb += *str;
+      break;
+    }
+
+    str++;
+  }
+
+  sb += '\"';
+}
+
 template <class T, class Enable = void>
 struct StormReflJson
 {
-  static bool Parse(T & t, const char * str, const char *& result)
-  {
-    return false;
-  }
+
 };
 
 template <class T, int i>
@@ -492,6 +532,38 @@ struct StormReflJson<T[i], void>
         }
       }
     }
+  }
+};
+
+template <int i>
+struct StormReflJson<char[i], void>
+{
+  template <class StringBuilder>
+  static void Encode(const char * str, StringBuilder & sb)
+  {
+    StormReflJsonEncodeString(str, sb);
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const char * str, StringBuilder & sb, int indent)
+  {
+    StormReflJsonEncodeString(str, sb);
+  }
+};
+
+template <>
+struct StormReflJson<char *, void>
+{
+  template <class StringBuilder>
+  static void Encode(const char * str, StringBuilder & sb)
+  {
+    StormReflJsonEncodeString(str, sb);
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const char * str, StringBuilder & sb, int indent)
+  {
+    StormReflJsonEncodeString(str, sb);
   }
 };
 
@@ -631,7 +703,6 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
     }
   }
 };
-
 
 template <class IntType, class ParseType>
 static IntType StormReflParseDigits(const char * & str, bool negative)

@@ -20,6 +20,28 @@ namespace StormReflMetaHelpers
     }
   };
 
+
+  template <class C, class Visitor, int I>
+  struct StormReflFunctionIterator
+  {
+    void operator()(Visitor & v)
+    {
+      auto f = typename StormReflFuncInfo<std::decay_t<C>>::template func_data_static<StormReflFuncInfo<std::decay_t<C>>::funcs_n - I>();
+      v(f);
+      StormReflFunctionIterator <C, Visitor, I - 1>() (v);
+    }
+  };
+
+  template <class C, class Visitor>
+  struct StormReflFunctionIterator<C, Visitor, 0>
+  {
+    void operator()(Visitor & v)
+    {
+
+    }
+  };
+
+
   template <typename T, typename Ret1, typename ... Args1, typename Ret2, typename ... Args2>
   constexpr bool StormReflCompareMemberFunctionPointers(Ret1(T::* f1)(Args1...), Ret2(T::* f2)(Args2...))
   {
@@ -99,6 +121,23 @@ namespace StormReflMetaHelpers
 
       return StormReflCall<N - 1>::StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
     }
+
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename Arg, typename ... Args>
+    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
+    {
+      std::decay_t<Arg> arg;
+      if (deserializer(arg) == false)
+      {
+        return false;
+      }
+
+      auto func = [&](Args & ... args)
+      {
+        return callable(arg, args...);
+      };
+
+      return StormReflCall<N - 1>::StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
+    }
   };
 
   template <>
@@ -108,6 +147,13 @@ namespace StormReflMetaHelpers
     static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable)
     {
       return callable();
+    }
+
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
+    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
+    {
+      callable();
+      return true;
     }
   };
 }
