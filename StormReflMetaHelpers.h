@@ -4,7 +4,7 @@
 
 namespace StormReflMetaHelpers
 {
-  template<typename T> struct StormReflCheckReflectable {
+  template<typename T, typename Enable = void> struct StormReflCheckReflectable {
     struct Fallback { bool is_reflectable; };
     struct Derived : T, Fallback { };
 
@@ -16,19 +16,20 @@ namespace StormReflMetaHelpers
     static const bool value = sizeof(f<Derived>(0)) == 2;
   };
 
-  template <typename T, int i> struct StormReflCheckReflectable<T[i]> { static const bool value = false; };
-  template <typename T> struct StormReflCheckReflectable<T *> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<bool> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<int8_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<int16_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<int32_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<int64_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<uint8_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<uint16_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<uint32_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<uint64_t> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<float> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<double> { static const bool value = false; };
+  template <typename T> struct StormReflCheckReflectable<T, typename std::enable_if<std::is_enum<T>::value>::type> { static const bool value = false; };
+  template <typename T, int i> struct StormReflCheckReflectable<T[i], void> { static const bool value = false; };
+  template <typename T> struct StormReflCheckReflectable<T *, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<bool, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<int8_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<int16_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<int32_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<int64_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<uint8_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<uint16_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<uint32_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<uint64_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<float, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<double, void> { static const bool value = false; };
 
 
   template <class C, class Visitor, int I>
