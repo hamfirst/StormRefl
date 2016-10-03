@@ -164,6 +164,8 @@
     <ClInclude Include="StormReflJsonStd.h" />
     <ClInclude Include="StormReflMetaCall.h" />
     <ClInclude Include="StormReflMetaCallHelpers.h" />
+    <ClInclude Include="StormReflMetaCallJson.h" />
+    <ClInclude Include="StormReflMetaCallJsonHelpers.h" />
     <ClInclude Include="StormReflMetaEnum.h" />
     <ClInclude Include="StormReflMetaEnumHelpers.h" />
     <ClInclude Include="StormReflMetaFuncs.h" />

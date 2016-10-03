@@ -176,42 +176,7 @@ struct StormReflJson<std::string, void>
   template <class StringBuilder>
   static void Encode(const std::string & t, StringBuilder & sb)
   {
-    sb += '\"';
-    for (auto c : t)
-    {
-      switch (c)
-      {
-      case '\"':
-        sb += "\\\"";
-        break;
-      case '\\':
-        sb += "\\\\";
-        break;
-      case '/':
-        sb += "\\/";
-        break;
-      case '\b':
-        sb += "\\b";
-        break;
-      case '\f':
-        sb += "\\f";
-        break;
-      case '\n':
-        sb += "\\n";
-        break;
-      case '\r':
-        sb += "\\r";
-        break;
-      case '\t':
-        sb += "\\r";
-        break;
-      default:
-        sb += c;
-        break;
-      }
-    }
-
-    sb += '\"';
+    StormReflJsonEncodeString(t.c_str(), sb);
   }
 
   template <class StringBuilder>

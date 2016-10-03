@@ -11,7 +11,27 @@ constexpr static int StormReflGetFunctionCount()
 template <typename C, typename ReturnType, typename ... Args>
 constexpr static int StormReflGetMemberFunctionIndex(ReturnType(C::* ptr)(Args...))
 {
-  return StormReflMetaHelpers::StormReflGetCompareMemberFunctionPointerIndex<C, StormReflGetFunctionCount<C>() - 1>::Compare(member_ptr);
+  return StormReflMetaHelpers::StormReflGetCompareMemberFunctionPointerIndex<C, StormReflGetFunctionCount<C>() - 1>::Compare(ptr);
+}
+
+template <typename C, typename ReturnType, typename ... Args>
+constexpr static uint64_t StormReflGetMemberFunctionHash(ReturnType(C::* ptr)(Args...))
+{
+  return StormReflFuncInfo<C>::func_data_static<StormReflGetMemberFunctionIndex(ptr)>::GetFunctionNameHash();
+}
+
+template<class C, class Visitor>
+void StormReflVisitFuncs(C & c, Visitor & v)
+{
+  StormReflMetaHelpers::StormReflFunctionIterator<C, Visitor, StormReflGetFunctionCount<C>()> itr;
+  itr(v);
+}
+
+template<class C, class Visitor>
+void StormReflVisitFuncByIndex(C & c, Visitor & v, int func_index)
+{
+  auto visitor = [&](auto f) { if (f.GetFunctionIndex() == func_index) v(f); };
+  StormReflVisitFuncs(c, visitor);
 }
 
 template <typename Serializer, typename C, typename ReturnType, typename ... Args>
@@ -35,3 +55,17 @@ ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func
 
   return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserialize<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
 }
+
+
+template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
+bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+{
+  auto call = [&](Args... args)
+  {
+    return (t.*func)(args...);
+  };
+
+  return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserializeCheckReturn<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
+}
+
+
