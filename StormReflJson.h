@@ -7,6 +7,19 @@
 
 inline bool StormReflJsonParseOverValue(const char * str, const char *& result);
 
+namespace StormReflJsonHelpers
+{
+  template <class StringBuilder>
+  void StormReflEncodeIndent(int indent, StringBuilder & sb)
+  {
+    while (indent > 0)
+    {
+      sb += "  ";
+      indent--;
+    }
+  }
+}
+
 inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
 {
   char c = *str;
@@ -424,7 +437,7 @@ struct StormReflJson<T[i], void>
 
     for (int index = 0; index < i; index++)
     {
-      StormReflEncodeIndent(indent + 1, sb);
+      StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
       StormReflJson<T>::EncodePretty(t[index], sb, indent + 1);
       if (index < i - 1)
       {
@@ -436,7 +449,7 @@ struct StormReflJson<T[i], void>
       }
     };
 
-    StormReflEncodeIndent(indent, sb);
+    StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += ']';
   }
 
@@ -548,7 +561,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
     };
 
     StormReflVisitEach(t, field_iterator);
-    StormReflEncodeIndent(indent, sb);
+    StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += '}';
   }
 
@@ -1097,16 +1110,6 @@ struct StormReflJson<bool, void>
     }
   }
 };
-
-template <class StringBuilder>
-void StormReflEncodeIndent(int indent, StringBuilder & sb)
-{
-  while (indent > 0)
-  {
-    sb += "  ";
-    indent--;
-  }
-}
 
 template <class T, class StringBuilder>
 void StormReflEncodeJson(const T & t, StringBuilder & sb)

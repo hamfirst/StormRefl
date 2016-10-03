@@ -7,6 +7,22 @@
 #include "StormReflJson.h"
 
 template <class T>
+std::string StormReflEncodeJson(const T & t)
+{
+  std::string sb;
+  StormReflJson<T>::Encode(t, sb);
+  return sb;
+}
+
+template <class T, class StringBuilder>
+std::string StormReflEncodePrettyJson(const T & t)
+{
+  std::string sb;
+  StormReflJson<T>::EncodePretty(t, sb, 0);
+  return sb;
+}
+
+template <class T>
 struct StormReflJson<std::vector<T>, void>
 {
   template <class StringBuilder>
@@ -17,7 +33,7 @@ struct StormReflJson<std::vector<T>, void>
     std::size_t size = t.size();
     for(std::size_t index = 0; index < size; index++)
     {
-      StormReflJson<T>::Encode(f.Get(), sb);
+      StormReflJson<T>::Encode(t[index], sb);
 
       if (index < size - 1)
       {
@@ -36,8 +52,8 @@ struct StormReflJson<std::vector<T>, void>
     std::size_t size = t.size();
     for (std::size_t index = 0; index < size; index++)
     {
-      StormReflEncodeIndent(indent, sb);
-      StormReflJson<T>::EncodePretty(f.Get(), sb, indent + 1);
+      StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
+      StormReflJson<T>::EncodePretty(t[index], sb, indent + 1);
 
       if (index < size - 1)
       {
@@ -131,7 +147,7 @@ struct StormReflJson<std::map<K, T>, void>
 
     auto itr = t.begin();
     sb += "{\n";
-    StormReflEncodeIndent(indent + 1, sb); 
+    StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
     sb += '\"';
     StormReflJson<K>::Encode(itr->first, sb);
     sb += "\":";
@@ -141,7 +157,7 @@ struct StormReflJson<std::map<K, T>, void>
     while (itr != t.end())
     {
       sb += ",\n";
-      StormReflEncodeIndent(indent + 1, sb);
+      StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
       sb += '\"';
       StormReflJson<K>::Encode(itr->first, sb);
       sb += "\":";
