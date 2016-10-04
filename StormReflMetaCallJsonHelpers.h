@@ -12,9 +12,8 @@ namespace StormReflMetaHelpers
     if (sizeof...(Args) > 0)
     {
       sb += ',';
+      StormReflCallSerializeJsonParameterPack(sb, std::forward<Args>(args)...);
     }
-
-    StormReflCallSerializeJsonParameterPack(sb, std::forward<Args>(args)...);
   }
 
   template <class StringBuilder>

@@ -196,4 +196,16 @@ namespace StormReflMetaHelpers
       return true;
     }
   };
+
+  template <typename C, int FuncIndex, int ParamIndex, typename ParamType, bool PastEnd>
+  struct ParamMatches : std::is_same<ParamType, StormReflFuncInfo<C>::template func_data_static<FuncIndex>::template param_info<ParamIndex>::ParamType>
+  {
+
+  };
+
+  template <typename C, int FuncIndex, int ParamIndex, typename ParamType>
+  struct ParamMatches<C, Funcindex, ParamIndex, ParamType, true> : std::false_type
+  {
+
+  };
 }

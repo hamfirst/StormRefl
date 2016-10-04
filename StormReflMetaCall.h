@@ -3,22 +3,34 @@
 #include "StormReflMetaCallHelpers.h"
 
 template <typename C>
-constexpr static int StormReflGetFunctionCount()
+constexpr int StormReflGetFunctionCount()
 {
   return StormReflFuncInfo<C>::funcs_n;
 }
 
 template <typename C, typename ReturnType, typename ... Args>
-constexpr static int StormReflGetMemberFunctionIndex(ReturnType(C::* ptr)(Args...))
+constexpr int StormReflGetMemberFunctionIndex(ReturnType(C::* ptr)(Args...))
 {
   return StormReflMetaHelpers::StormReflGetCompareMemberFunctionPointerIndex<C, StormReflGetFunctionCount<C>() - 1>::Compare(ptr);
 }
 
 template <typename C, typename ReturnType, typename ... Args>
-constexpr static uint64_t StormReflGetMemberFunctionHash(ReturnType(C::* ptr)(Args...))
+constexpr uint64_t StormReflGetMemberFunctionHash(ReturnType(C::* ptr)(Args...))
 {
   return StormReflFuncInfo<C>::template func_data_static<StormReflGetMemberFunctionIndex(ptr)>::GetFunctionNameHash();
 }
+
+
+template <int ParamIndex, typename ParamType>
+struct StormReflParam
+{
+  template <typename C, typename ReturnType, typename ... Args>
+  constexpr bool IsParamOfType(ReturnType(C::* ptr)(Args...))
+  {
+    constexpr bool ParamOutOfRange = ParamIndex >= StormReflFuncInfo<C>::template func_data_static<FuncIndex>::params_n;
+    return StormReflMetaHelpers::ParamMatches<C, StormReflGetMemberFunctionIndex(ptr), ParamIndex, ParamType, ParamOutOfRange>::value;
+  }
+};
 
 template<class C, class Visitor>
 void StormReflVisitFuncs(C & c, Visitor & v)
