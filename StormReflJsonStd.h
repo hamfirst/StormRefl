@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <tuple>
 
 #include "StormReflJson.h"
 
@@ -14,7 +15,7 @@ std::string StormReflEncodeJson(const T & t)
   return sb;
 }
 
-template <class T, class StringBuilder>
+template <class T>
 std::string StormReflEncodePrettyJson(const T & t)
 {
   std::string sb;
@@ -97,9 +98,16 @@ struct StormReflJson<std::vector<T>, void>
       }
 
       StormReflJsonAdvanceWhiteSpace(str);
-      if (*str != ']' || *str != ',')
+      if (*str != ']')
       {
-        return false;
+        if (*str != ',')
+        {
+          return false;
+        }
+        else
+        {
+          str++;
+        }
       }
     }
   }
@@ -165,7 +173,7 @@ struct StormReflJson<std::map<K, T>, void>
       itr++;
     }
 
-    StormReflEncodeIndent(indent, sb);
+    StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += '}';
   }
 };
@@ -288,3 +296,168 @@ struct StormReflJson<std::string, void>
     }
   }
 };
+
+template <class First, class Second>
+struct StormReflJson<std::pair<First, Second>, void>
+{
+  template <class StringBuilder>
+  static void Encode(const std::pair<First, Second> & t, StringBuilder & sb)
+  {
+    sb += '[';
+    StormReflJson<First>::Encode(t.first, sb);
+    sb += ',';
+    StormReflJson<Second>::Encode(t.second, sb);
+    sb += ']';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const std::pair<First, Second> & t, StringBuilder & sb, int indent)
+  {
+    sb += "[ ";
+    StormReflJson<First>::Encode(t.first, sb);
+    sb += ", ";
+    StormReflJson<Second>::Encode(t.second, sb);
+    sb += " ]";
+  }
+
+  static bool Parse(std::pair<First, Second> & t, const char * str, const char *& result)
+  {
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != '[')
+    {
+      return false;
+    }
+
+    str++;
+
+    if (StormReflJson<First>::Parse(t.first, str, str) == false)
+    {
+      return false;
+    }
+
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != ',')
+    {
+      return false;
+    }
+
+    str++;
+
+    if (StormReflJson<Second>::Parse(t.second, str, str) == false)
+    {
+      return false;
+    }
+
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != ']')
+    {
+      return false;
+    }
+
+    str++;
+    result = str;
+    return true;
+  }
+};
+
+template <class ... Types>
+struct StormReflJson<std::tuple<Types...>, void>
+{
+  template <int N>
+  struct TupleArg
+  {
+    template <class StringBuilder>
+    static void Encode(const std::tuple<Types...> & t, StringBuilder & sb)
+    {
+      using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<N>(t))>>;
+      StormReflJson<elem_type>::Encode(std::get<N>(t), sb);
+
+      if (N < sizeof...(Types) - 1)
+      {
+        sb += ',';
+      }
+
+      TupleArg<N + 1>::Encode(t, sb);
+    }
+
+    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+    {
+      using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<N>(t))>>;
+      if (StormReflJson<elem_type>::Parse(std::get<N>(t), str, str) == false)
+      {
+        return false;
+      }
+
+      if (N < sizeof...(Types)-1)
+      {
+        StormReflJsonAdvanceWhiteSpace(str);
+        if (*str != ',')
+        {
+          return false;
+        }
+
+        str++;
+      }
+
+      return TupleArg<N + 1>::Parse(t, str, result);
+    }
+  };
+
+  template <>
+  struct TupleArg<sizeof...(Types)>
+  {
+    template <class StringBuilder>
+    static void Encode(const std::tuple<Types...> & t, StringBuilder & sb)
+    {
+
+    }
+
+    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+    {
+      result = str;
+      return true;
+    }
+  };
+
+  template <class StringBuilder>
+  static void Encode(const std::tuple<Types...> & t, StringBuilder & sb)
+  {
+    sb += '[';
+    TupleArg<0>::Encode(t, sb);
+    sb += ']';
+  }
+
+  template <class StringBuilder>
+  static void EncodePretty(const std::tuple<Types...> & t, StringBuilder & sb, int indent)
+  {
+    sb += "[ ";
+    TupleArg<0>::Encode(t, sb);
+    sb += " ]";
+  }
+
+  static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+  {
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != '[')
+    {
+      return false;
+    }
+
+    str++;
+
+    if (TupleArg<0>::Parse(t, str, str) == false)
+    {
+      return false;
+    }
+
+    StormReflJsonAdvanceWhiteSpace(str);
+    if (*str != ']')
+    {
+      return false;
+    }
+
+    str++;
+    result = str;
+    return true;
+  }
+}

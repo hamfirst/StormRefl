@@ -614,7 +614,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 
     auto field_iterator = [&](auto f)
     {
-      StormReflEncodeIndent(indent + 1, sb);
+      StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
       sb += '\"';
       sb += f.GetName();
       sb += "\" : ";

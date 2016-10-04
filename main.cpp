@@ -101,6 +101,7 @@ public:
       //printf("Class: %s\n", decl_name.c_str());
 
       ReflectedDataClass class_data = { decl_name };
+      class_data.m_NoDefault = false;
 
       for (const auto & base : decl->bases())
       {
@@ -144,6 +145,12 @@ public:
                 auto annotation_str = std::string(annotation->getAnnotation());
                 if (annotation_str == "no_refl")
                 {
+                  ignore_field = true;
+                  break;
+                }
+                else if (annotation_str == "no_default")
+                {
+                  class_data.m_NoDefault = true;
                   ignore_field = true;
                   break;
                 }

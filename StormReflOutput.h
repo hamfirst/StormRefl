@@ -30,6 +30,7 @@ struct ReflectedDataClass
   std::string m_Name;
   std::string m_Base;
   std::vector<ReflectedField> m_Fields;
+  bool m_NoDefault;
 };
 
 struct ReflectedFunctionalClass

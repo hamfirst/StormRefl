@@ -141,7 +141,12 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
 
     fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", cl.m_Name.c_str());
     fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(cl.m_Name));
-    fprintf(fp, "  static %s & GetDefault() { static %s def; return def; }\n", cl.m_Name.c_str(), cl.m_Name.c_str());
+
+    if (cl.m_NoDefault == false)
+    {
+      fprintf(fp, "  static %s & GetDefault() { static %s def; return def; }\n", cl.m_Name.c_str(), cl.m_Name.c_str());
+    }
+
     fprintf(fp, "};\n\n");
 
     std::string base_str = cl.m_Base.size() == 0 ? "" :

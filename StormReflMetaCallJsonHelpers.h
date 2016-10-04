@@ -8,12 +8,8 @@ namespace StormReflMetaHelpers
   void StormReflCallSerializeJsonParameterPack(StringBuilder & sb, Arg && arg, Args && ... args)
   {
     StormReflEncodeJson(arg, sb);
-
-    if (sizeof...(Args) != 0)
-    {
-      sb += ',';
-      StormReflCallSerializeJsonParameterPack(sb, std::forward<Args>(args)...);
-    }
+    sb += ',';
+    StormReflCallSerializeJsonParameterPack(sb, std::forward<Args>(args)...);
   }
 
   template <class StringBuilder>
