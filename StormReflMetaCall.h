@@ -46,23 +46,23 @@ auto StormReflCallSerialize(Serializer & serializer, ReturnType(C::*func)(Args..
 }
 
 template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
-ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArgs && ... args)
 {
   auto call = [&](Args... args)
   {
-    return (t.*func)(args...);
+    return (t.*func)(provided_args..., args...);
   };
 
   return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserialize<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
 }
 
 
-template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
-bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+template <typename Deserializer, typename T, typename ReturnType, typename ... Args, typename ... ProvidedArgs>
+bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArgs && ... provided_args)
 {
   auto call = [&](Args... args)
   {
-    return (t.*func)(args...);
+    return (t.*func)(provided_args..., args...);
   };
 
   return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserializeCheckReturn<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);

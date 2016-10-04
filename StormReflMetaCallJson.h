@@ -9,10 +9,6 @@ void StormReflCallSerializeJson(StringBuilder & sb, ReturnType(C::*func)(FuncArg
   sb += '[';
   StormReflEncodeJson(StormReflGetMemberFunctionIndex(func), sb);
 
-  using FuncTuple = std::tuple<FuncArgs...>;
-  using ParamTuple = std::tuple<ParamArgs...>;
-  static_assert(std::is_convertible<ParamTuple, FuncTuple>::value, "Incompatible function call");
-
   if (sizeof...(ParamArgs) != 0)
   {
     sb += ',';
@@ -22,8 +18,8 @@ void StormReflCallSerializeJson(StringBuilder & sb, ReturnType(C::*func)(FuncArg
   sb += ']';
 }
 
-template <typename C>
-bool StormReflCallDeserializeJson(C & c, const char * str, const char *& result)
+template <typename C, typename ... ProvidedArgs>
+bool StormReflCallDeserializeJson(C & c, const char * str, const char *& result, ProvidedArgs && ... args)
 {
   StormReflJsonAdvanceWhiteSpace(str);
   if (*str != '[')
