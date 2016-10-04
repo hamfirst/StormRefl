@@ -19,7 +19,7 @@ void StormReflCallSerializeJson(StringBuilder & sb, ReturnType(C::*func)(FuncArg
 }
 
 template <typename C, typename ... ProvidedArgs>
-bool StormReflCallDeserializeJson(C & c, const char * str, const char *& result, ProvidedArgs && ... args)
+bool StormReflCallParseJson(C & c, const char * str, const char *& result, ProvidedArgs && ... args)
 {
   StormReflJsonAdvanceWhiteSpace(str);
   if (*str != '[')
@@ -53,7 +53,7 @@ bool StormReflCallDeserializeJson(C & c, const char * str, const char *& result,
   auto func_visitor = [&](auto f)
   {
     auto func_pointer = f.GetFunctionPtr();
-    parsed = StormReflCallCheck(deserializer, c, func_pointer);
+    parsed = StormReflCallCheck(deserializer, c, func_pointer, args...);
   };
 
   StormReflVisitFuncByIndex(c, func_visitor, func_index);
@@ -72,9 +72,9 @@ bool StormReflCallDeserializeJson(C & c, const char * str, const char *& result,
   return false;
 }
 
-template <typename C>
-bool StormReflCallDeserializeJson(C & c, const char * str)
+template <typename C, typename ... ProvidedArgs>
+bool StormReflCallDeserializeJson(C & c, const char * str, ProvidedArgs && ... args)
 {
-  return StormReflCallDeserializeJson(c, str, str);
+  return StormReflCallParseJson(c, str, str, std::forward<ProvidedArgs>(args)...);
 }
 

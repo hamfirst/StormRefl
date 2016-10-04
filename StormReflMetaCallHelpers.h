@@ -52,10 +52,10 @@ namespace StormReflMetaHelpers
   struct StormReflGetCompareMemberFunctionPointerIndex
   {
     template <typename ReturnType, typename ... Args>
-    constexpr static int Compare(ReturnType (C::* ptr)(Args...))
+    constexpr static int Compare(ReturnType(C::* ptr)(Args...))
     {
-      return StormReflCompareMemberFunctionPointers(StormReflFuncInfo<C>::template func_data_static<i>::GetFunctionPtr(), ptr) ? 
-        i : 
+      return StormReflCompareMemberFunctionPointers(StormReflFuncInfo<C>::template func_data_static<i>::GetFunctionPtr(), ptr) ?
+        i :
         StormReflGetCompareMemberFunctionPointerIndex<C, i - 1>::Compare(ptr);
     }
   };
@@ -64,7 +64,7 @@ namespace StormReflMetaHelpers
   struct StormReflGetCompareMemberFunctionPointerIndex<C, -1>
   {
     template <typename ReturnType, typename ... Args>
-    constexpr static int Compare(ReturnType (C::* ptr)(Args...))
+    constexpr static int Compare(ReturnType(C::* ptr)(Args...))
     {
       return -1;
     }
@@ -105,6 +105,46 @@ namespace StormReflMetaHelpers
 
   }
 
+  template <typename Arg, typename ... Args>
+  struct StormReflCallConsume
+  {
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename ProvidedArg, typename ... ProvidedArgs>
+    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable, ProvidedArg && arg, ProvidedArgs && ... args)
+    {
+      auto func = [&](Args & ... args)
+      {
+        return callable(arg, args...);
+      };
+
+      return StormReflCallConsume<Args...>::template StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, ProvidedArgs...>(
+        deserializer, func, std::forward<ProvidedArgs>(args)...);
+    }
+
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
+    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable)
+    {
+      return StormReflCall<sizeof...(Args)+1>::template StormReflCallDeserialize<Deserializer, Callable, T, ReturnType, Arg, Args...>(deserializer, callable);
+    }
+
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename ProvidedArg, typename ... ProvidedArgs>
+    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable, ProvidedArg && arg, ProvidedArgs && ... args)
+    {
+      auto func = [&](Args & ... args)
+      {
+        return callable(arg, args...);
+      };
+
+      return StormReflCallConsume<Args...>::template StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, ProvidedArgs...>(
+        deserializer, func, std::forward<ProvidedArgs>(args)...);
+    }
+
+    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
+    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
+    {
+      return StormReflCall<sizeof...(Args)+1>::template StormReflCallDeserializeCheckReturn<Deserializer, Callable, T, ReturnType, Arg, Args...>(deserializer, callable);
+    }
+  };
+
   template <int N>
   struct StormReflCall
   {
@@ -119,7 +159,7 @@ namespace StormReflMetaHelpers
         return callable(arg, args...);
       };
 
-      return StormReflCall<N - 1>::StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
+      return StormReflCall<N - 1>::template StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
     }
 
     template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename Arg, typename ... Args>
@@ -136,7 +176,7 @@ namespace StormReflMetaHelpers
         return callable(arg, args...);
       };
 
-      return StormReflCall<N - 1>::StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
+      return StormReflCall<N - 1>::template StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
     }
   };
 

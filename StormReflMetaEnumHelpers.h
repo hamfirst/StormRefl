@@ -28,11 +28,13 @@ namespace StormReflMetaHelpers
   {
     void operator()(Visitor & v, uint32_t enum_name_hash)
     {
-      using info_type = typename StormReflEnumInfo<std::decay_t<C>>;
-      auto f = info_type::template elems<info_type::elems_n - I>();
+      using info_type = StormReflEnumInfo<std::decay_t<C>>;
+      using elem_type = typename info_type::template elems<info_type::elems_n - I>;
+
+      auto f = elem_type{};
+
       if (f.GetNameHash() == enum_name_hash)
       {
-        auto f = info_type::template elems<info_type::elems_n - I>();
         v(f);
         return;
       }
@@ -42,8 +44,11 @@ namespace StormReflMetaHelpers
 
     void operator()(Visitor & v, C enum_val)
     {
-      using info_type = typename StormReflEnumInfo<std::decay_t<C>>;
-      auto f = info_type::template elems<info_type::elems_n - I>();
+      using info_type = StormReflEnumInfo<std::decay_t<C>>;
+      using elem_type = typename info_type::template elems<info_type::elems_n - I>;
+
+      auto f = elem_type{};
+
       if (f.GetValue() == enum_val)
       {
         v(f);
