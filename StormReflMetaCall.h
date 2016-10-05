@@ -20,11 +20,18 @@ constexpr uint64_t StormReflGetMemberFunctionHash(ReturnType(C::* ptr)(Args...))
   return StormReflFuncInfo<C>::template func_data_static<StormReflGetMemberFunctionIndex(ptr)>::GetFunctionNameHash();
 }
 
-template <typename C, int ParamIndex, typename ParamType, int FuncIndex>
+template <typename C, int FuncIndex, int ParamIndex>
+struct StormReflGetParamType : StormReflMetaHelpers::StormReflParamInfo<C, FuncIndex, ParamIndex>
+{
+
+};
+
+template <typename C, int FuncIndex, int ParamIndex, typename ParamType>
 constexpr bool StormReflIsParamOfType()
 {
-  return StormReflMetaHelpers::StormReflParamMatches<C, FuncIndex, ParamIndex, ParamType, ParamIndex >= StormReflFuncInfo<C>::template func_data_static<FuncIndex>::params_n>::value;
+  return std::is_same<typename StormReflGetParamType<C, FuncIndex, ParamIndex>::type, ParamType>::value;
 }
+
 
 template<class C, class Visitor>
 void StormReflVisitFuncs(C & c, Visitor & v)

@@ -1,5 +1,15 @@
 #pragma once
 
+template <typename T>
+struct StormReflTypeInfo;
+
+template <typename T>
+struct StormReflFuncInfo;
+
+template <typename T>
+struct StormReflEnumInfo;
+
+
 namespace StormReflMetaHelpers
 {
   template <typename T1, typename T2>
@@ -19,7 +29,6 @@ namespace StormReflMetaHelpers
       return t1 == t2;
     }
   };
-
 
   template <class C, class Visitor, int I>
   struct StormReflFunctionIterator
@@ -92,20 +101,34 @@ namespace StormReflMetaHelpers
     }
   };
 
-
-
-  template <typename C, int FuncIndex, int ParamIndex, typename ParamType, bool PastEnd>
-  struct StormReflParamMatches
+  template <typename T, int FuncIndex, int ParamIndex, bool InvParamIndex>
+  struct StormReflParamDetailInfo
   {
-    using TypeInfo = StormReflFuncInfo<C>;
-    using FuncInfo = typename TypeInfo::template func_data_static<FuncIndex>;
-    using ParamInfo = typename FuncInfo::template param_info<ParamIndex>;
-
-    static constexpr bool value = std::is_same<ParamType, typename ParamInfo::param_type>::value;
+    using type = void;
   };
 
-  template <typename C, int FuncIndex, int ParamIndex, typename ParamType>
-  struct StormReflParamMatches<C, FuncIndex, ParamIndex, ParamType, true> : std::false_type
+  template <typename T, int FuncIndex, int ParamIndex>
+  struct StormReflParamDetailInfo<T, FuncIndex, ParamIndex, false>
+  {
+    using type = typename StormReflFuncInfo<T>::template func_data_static<FuncIndex>::template param_info<ParamIndex>::param_type;
+  };
+
+  template <typename T, int FuncIndex, int ParamIndex, bool InvFuncIndex>
+  struct StormReflParamFuncInfo
+  {
+    using type = void;
+  };
+
+  template <typename T, int FuncIndex, int ParamIndex>
+  struct StormReflParamFuncInfo<T, FuncIndex, ParamIndex, false> : 
+    StormReflParamDetailInfo<T, FuncIndex, ParamIndex, ParamIndex < StormReflFuncInfo<T>::template func_data_static<FuncIndex>::params_n>
+  {
+
+  };
+
+  template <typename T, int FuncIndex, int ParamIndex>
+  struct StormReflParamInfo : 
+    StormReflParamFuncInfo<T, FuncIndex, ParamIndex, FuncIndex < StormReflFuncInfo<T>::funcs_n>
   {
 
   };
@@ -188,7 +211,7 @@ namespace StormReflMetaHelpers
   bool StormReflCallDeserialize(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val)
   {
     typename std::remove_const<std::remove_reference_t<FuncArg>>::type f{};
-    if (deserializer(f) == false)
+    if (deserializer(f, sizeof...(FuncArgs) == 0) == false)
     {
       return false;
     }

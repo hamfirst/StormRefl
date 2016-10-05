@@ -594,7 +594,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       sb += f.GetName();
       sb += "\":";
 
-      using member_type = decltype(f)::member_type;
+      using member_type = typename decltype(f)::member_type;
 
       StormReflJson<member_type>::Encode(f.Get(), sb);
       if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
@@ -683,7 +683,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 
       auto field_visitor = [&](auto f)
       {
-        using member_type = decltype(f)::member_type;
+        using member_type = typename decltype(f)::member_type;
         member_type & member = f.Get();
         parsed_field = StormReflJson<member_type>::Parse(member, str, result_str);
       };

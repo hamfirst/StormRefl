@@ -28,7 +28,7 @@ bool StormReflCallParseJson(C & c, const char * str, const char *& result, Provi
   }
 
   str++;
-  StormReflJsonAdvanceWhiteSpace(str);
+
   int func_index = 0;
   if (StormReflJson<int>::Parse(func_index, str, str) == false)
   {
@@ -37,7 +37,7 @@ bool StormReflCallParseJson(C & c, const char * str, const char *& result, Provi
 
   bool parsed = false;
 
-  auto deserializer = [&](auto & t)
+  auto deserializer = [&](auto & t, bool final_arg)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != ',')
@@ -47,7 +47,21 @@ bool StormReflCallParseJson(C & c, const char * str, const char *& result, Provi
 
     str++;
     StormReflJsonAdvanceWhiteSpace(str);
-    return StormReflParseJson(t, str, str);
+    if (StormReflParseJson(t, str, str) == false)
+    {
+      return false;
+    }
+
+    if (final_arg)
+    {
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str != ']')
+      {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   auto func_visitor = [&](auto f)
