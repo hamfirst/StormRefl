@@ -92,6 +92,24 @@ namespace StormReflMetaHelpers
     }
   };
 
+
+
+  template <typename C, int FuncIndex, int ParamIndex, typename ParamType, bool PastEnd>
+  struct StormReflParamMatches
+  {
+    using TypeInfo = StormReflFuncInfo<C>;
+    using FuncInfo = typename TypeInfo::template func_data_static<FuncIndex>;
+    using ParamInfo = typename FuncInfo::template param_info<ParamIndex>;
+
+    static constexpr bool value = std::is_same<ParamType, typename ParamInfo::param_type>::value;
+  };
+
+  template <typename C, int FuncIndex, int ParamIndex, typename ParamType>
+  struct StormReflParamMatches<C, FuncIndex, ParamIndex, ParamType, true> : std::false_type
+  {
+
+  };
+
   template <typename Serializer, typename Arg, typename ... Args>
   void StormReflCallSerialize(Serializer & serializer, Arg && arg, Args && ... args)
   {
@@ -105,107 +123,159 @@ namespace StormReflMetaHelpers
 
   }
 
-  template <typename Arg, typename ... Args>
-  struct StormReflCallConsume
+  template <typename ReturnType>
+  struct StormReflReturnBuffer
   {
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename ProvidedArg, typename ... ProvidedArgs>
-    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable, ProvidedArg && arg, ProvidedArgs && ... args)
+    char m_Buffer[sizeof(ReturnType)];
+  };
+
+  template <>
+  struct StormReflReturnBuffer<void>
+  {
+    char m_Buffer[1];
+  };
+
+  template <typename ReturnType, typename Enable = void>
+  struct StormReflReturnDestroy
+  {
+    static ReturnType Destroy(ReturnType * t)
     {
-      auto func = [&](Args & ... args)
-      {
-        return callable(arg, args...);
-      };
-
-      return StormReflCallConsume<Args...>::template StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, ProvidedArgs...>(
-        deserializer, func, std::forward<ProvidedArgs>(args)...);
-    }
-
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
-    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable)
-    {
-      return StormReflCall<sizeof...(Args)+1>::template StormReflCallDeserialize<Deserializer, Callable, T, ReturnType, Arg, Args...>(deserializer, callable);
-    }
-
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename ProvidedArg, typename ... ProvidedArgs>
-    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable, ProvidedArg && arg, ProvidedArgs && ... args)
-    {
-      auto func = [&](Args & ... args)
-      {
-        return callable(arg, args...);
-      };
-
-      return StormReflCallConsume<Args...>::template StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, ProvidedArgs...>(
-        deserializer, func, std::forward<ProvidedArgs>(args)...);
-    }
-
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
-    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
-    {
-      return StormReflCall<sizeof...(Args)+1>::template StormReflCallDeserializeCheckReturn<Deserializer, Callable, T, ReturnType, Arg, Args...>(deserializer, callable);
+      return *t;
     }
   };
 
-  template <int N>
-  struct StormReflCall
+  template <typename ReturnType>
+  struct StormReflReturnDestroy<ReturnType, typename std::enable_if<std::is_destructible<ReturnType>::value>::type>
   {
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename Arg, typename ... Args>
-    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable)
+    static ReturnType Destroy(ReturnType * t)
     {
-      std::decay_t<Arg> arg;
-      deserializer(arg);
-
-      auto func = [&](Args & ... args)
-      {
-        return callable(arg, args...);
-      };
-
-      return StormReflCall<N - 1>::template StormReflCallDeserialize<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
-    }
-
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType, typename Arg, typename ... Args>
-    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
-    {
-      std::decay_t<Arg> arg;
-      if (deserializer(arg) == false)
-      {
-        return false;
-      }
-
-      auto func = [&](Args & ... args)
-      {
-        return callable(arg, args...);
-      };
-
-      return StormReflCall<N - 1>::template StormReflCallDeserializeCheckReturn<Deserializer, decltype(func), T, ReturnType, Args...>(deserializer, func);
+      ReturnType t_moved(std::move(*t));
+      t->~ReturnType();
+      return t_moved;
     }
   };
 
   template <>
-  struct StormReflCall<0>
+  struct StormReflReturnDestroy<void, void>
   {
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
-    static ReturnType StormReflCallDeserialize(Deserializer & deserializer, Callable & callable)
+    static void Destroy(void * t)
     {
-      return callable();
-    }
 
-    template <typename Deserializer, typename Callable, typename T, typename ReturnType>
-    static bool StormReflCallDeserializeCheckReturn(Deserializer & deserializer, Callable & callable)
+    }
+  };
+
+  template <typename ReturnType>
+  struct StormReflCallReturnCapture
+  {
+    template <typename Callable>
+    static void Capture(Callable && callable, ReturnType * ret_val)
+    {
+      new (ret_val) ReturnType(callable());
+    }
+  };
+
+  template <>
+  struct StormReflCallReturnCapture<void>
+  {
+    template <typename Callable>
+    static void Capture(Callable && callable, void * ret_val)
     {
       callable();
-      return true;
     }
   };
 
-  template <typename C, int FuncIndex, int ParamIndex, typename ParamType, bool PastEnd>
-  struct ParamMatches : std::is_same<ParamType, StormReflFuncInfo<C>::template func_data_static<FuncIndex>::template param_info<ParamIndex>::ParamType>
+  template <typename Deserializer, typename Callable, typename ReturnType, typename FuncArg, typename ... FuncArgs>
+  bool StormReflCallDeserialize(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val)
   {
+    typename std::remove_const<std::remove_reference_t<FuncArg>>::type f{};
+    if (deserializer(f) == false)
+    {
+      return false;
+    }
 
+    auto func = [&](FuncArgs & ... args)
+    {
+      return callable(f, args...);
+    };
+
+    return StormReflCallDeserialize(deserializer, func, &decltype(func)::operator(), ret_val);
+  }
+
+  template <typename Deserializer, typename Callable, typename ReturnType>
+  bool StormReflCallDeserialize(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)() const, ReturnType * ret_val)
+  {
+    StormReflCallReturnCapture<ReturnType>::Capture(callable, ret_val);
+    return true;
+  }
+
+  template <typename Deserializer, typename Callable, typename ReturnType, typename FuncArg, typename ProvidedArg, typename ... FuncArgs, typename ... ProvidedArgs>
+  static bool StormReflCreateCallableAdditive(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val,
+    ProvidedArg && provided_arg, ProvidedArgs && ... provided_args)
+  {
+    return StormReflCallableAdditive<std::is_convertible<ProvidedArg, FuncArg>::value>::CreateCallableAdditive(
+      deserializer, callable, &Callable::operator(), ret_val, std::forward<ProvidedArg>(provided_arg), std::forward<ProvidedArgs>(provided_args)...);
+  }
+
+  template <typename Deserializer, typename Callable, typename ReturnType, typename ... FuncArgs>
+  static bool StormReflCreateCallableAdditive(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArgs...) const, ReturnType * ret_val)
+  {
+    return StormReflCallDeserialize(deserializer, callable, &Callable::operator(), ret_val);
+  }
+
+  template <bool Valid>
+  struct StormReflCallableAdditive
+  {
+    template <typename Deserializer, typename Callable, typename ReturnType, typename ... FuncArgs, typename ... ProvidedArgs>
+    static bool CreateCallableAdditive(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArgs...) const, ReturnType * ret_val, ProvidedArgs && ... provided_args)
+    {
+      return false;
+    }
   };
 
-  template <typename C, int FuncIndex, int ParamIndex, typename ParamType>
-  struct ParamMatches<C, Funcindex, ParamIndex, ParamType, true> : std::false_type
+  template <>
+  struct StormReflCallableAdditive<true>
   {
+    template <typename Deserializer, typename Callable, typename ReturnType, typename FuncArg, typename ProvidedArg, typename ... FuncArgs, typename ... ProvidedArgs>
+    static bool CreateCallableAdditive(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val,
+      ProvidedArg && provided_arg, ProvidedArgs && ... provided_args)
+    {
+      auto func = [&](FuncArgs & ... args)
+      {
+        return callable(provided_arg, args...);
+      };
 
+      return StormReflCreateCallableAdditive(deserializer, func, &decltype(func)::operator(), ret_val, std::forward<ProvidedArgs>(provided_args)...);
+    }
   };
+
+  template <bool Valid>
+  struct StormReflCallable
+  {
+    template <typename Deserializer, typename T, typename ReturnType, typename ... FuncArgs, typename ... ProvidedArgs>
+    static bool CreateCallable(Deserializer && deserializer, T & t, ReturnType(T::*ptr)(FuncArgs...), ReturnType * ret_val, ProvidedArgs && ... provided_args)
+    {
+      return false;
+    }
+  };
+
+  template <>
+  struct StormReflCallable<true>
+  {
+    template <typename Deserializer, typename T, typename ReturnType, typename ... FuncArgs, typename ... ProvidedArgs>
+    static bool CreateCallable(Deserializer && deserializer, T & t, ReturnType(T::*ptr)(FuncArgs...), ReturnType * ret_val, ProvidedArgs && ... provided_args)
+    {
+      auto callable = [&](FuncArgs & ... args)
+      {
+        return (t.*ptr)(args...);
+      };
+
+      return StormReflCreateCallableAdditive(deserializer, callable, &decltype(callable)::operator(), ret_val, std::forward<ProvidedArgs>(provided_args)...);
+    }
+  };
+
+  template <typename Deserializer, typename T, typename ReturnType, typename ... FuncArgs, typename ... ProvidedArgs>
+  bool StormReflCreateCallable(Deserializer && deserializer, T & t, ReturnType (T::*ptr)(FuncArgs...), ReturnType * ret_val, ProvidedArgs && ... provided_args)
+  {
+    return StormReflCallable<sizeof...(ProvidedArgs) <= sizeof...(FuncArgs)>::CreateCallable(deserializer, t, ptr, ret_val, std::forward<ProvidedArgs>(provided_args)...);
+  }
 }

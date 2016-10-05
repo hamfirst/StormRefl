@@ -20,17 +20,11 @@ constexpr uint64_t StormReflGetMemberFunctionHash(ReturnType(C::* ptr)(Args...))
   return StormReflFuncInfo<C>::template func_data_static<StormReflGetMemberFunctionIndex(ptr)>::GetFunctionNameHash();
 }
 
-
-template <int ParamIndex, typename ParamType>
-struct StormReflParam
+template <typename C, int ParamIndex, typename ParamType, int FuncIndex>
+constexpr bool StormReflIsParamOfType()
 {
-  template <typename C, typename ReturnType, typename ... Args>
-  constexpr bool IsParamOfType(ReturnType(C::* ptr)(Args...))
-  {
-    constexpr bool ParamOutOfRange = ParamIndex >= StormReflFuncInfo<C>::template func_data_static<FuncIndex>::params_n;
-    return StormReflMetaHelpers::ParamMatches<C, StormReflGetMemberFunctionIndex(ptr), ParamIndex, ParamType, ParamOutOfRange>::value;
-  }
-};
+  return StormReflMetaHelpers::StormReflParamMatches<C, FuncIndex, ParamIndex, ParamType, ParamIndex >= StormReflFuncInfo<C>::template func_data_static<FuncIndex>::params_n>::value;
+}
 
 template<class C, class Visitor>
 void StormReflVisitFuncs(C & c, Visitor & v)
@@ -61,46 +55,24 @@ auto StormReflCallSerialize(Serializer & serializer, ReturnType(C::*func)(Args..
 template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
 ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
 {
-  auto call = [&](Args... args)
+  StormReflMetaHelpers::StormReflReturnBuffer<ReturnType> ret_buffer;
+  if (StormReflMetaHelpers::StormReflCreateCallable(deserializer, t, func, (ReturnType *)ret_buffer.m_Buffer, std::forward<ProvidedArgs>(args)...))
   {
-    return (t.*func)(args...);
-  };
+    return StormReflMetaHelpers::StormReflReturnDestroy<ReturnType>::Destroy((ReturnType *)ret_buffer.m_Buffer);
+  }
 
-  return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserialize<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
+  throw std::runtime_error("Deserialize failure");
 }
 
-
-template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
-bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+template <typename Deserializer, typename T, typename ReturnType, typename ... Args, typename ... ProvidedArgs>
+bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArgs && ... args)
 {
-  auto call = [&](Args... args)
+  StormReflMetaHelpers::StormReflReturnBuffer<ReturnType> ret_buffer;
+  if (StormReflMetaHelpers::StormReflCreateCallable(deserializer, t, func, (ReturnType *)ret_buffer.m_Buffer, std::forward<ProvidedArgs>(args)...))
   {
-    return (t.*func)(args...);
-  };
+    StormReflMetaHelpers::StormReflReturnDestroy<ReturnType>::Destroy((ReturnType *)ret_buffer.m_Buffer);
+    return true;
+  }
 
-  return StormReflMetaHelpers::StormReflCall<sizeof...(Args)>::StormReflCallDeserializeCheckReturn<Deserializer, decltype(call), T, ReturnType, Args...>(deserializer, call);
-}
-
-template <typename Deserializer, typename T, typename ReturnType, typename ... Args, typename ProvidedArg, typename ... ProvidedArgs>
-ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArg && provided_arg, ProvidedArgs && ... provided_args)
-{
-  auto call = [&](Args... args)
-  {
-    return (t.*func)(args...);
-  };
-
-  return StormReflMetaHelpers::StormReflCallConsume<Args...>::template StormReflCallDeserialize<Deserializer, decltype(call), T, ReturnType, ProvidedArg, ProvidedArgs...>(
-    deserializer, call, std::forward<ProvidedArg>(provided_arg), std::forward<ProvidedArgs>(provided_args)...);
-}
-
-template <typename Deserializer, typename T, typename ReturnType, typename ... Args, typename ProvidedArg, typename ... ProvidedArgs>
-bool StormReflCallCheck(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArg && provided_arg, ProvidedArgs && ... provided_args)
-{
-  auto call = [&](Args... args)
-  {
-    return (t.*func)(args...);
-  };
-
-  return StormReflMetaHelpers::StormReflCallConsume<Args...>::template StormReflCallDeserializeCheckReturn<Deserializer, decltype(call), T, ReturnType, ProvidedArg, ProvidedArgs...>(
-    deserializer, call, std::forward<ProvidedArg>(provided_arg), std::forward<ProvidedArgs>(provided_args)...);
+  return false;
 }
