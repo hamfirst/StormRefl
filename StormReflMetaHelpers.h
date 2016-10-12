@@ -273,4 +273,55 @@ namespace StormReflMetaHelpers
       return true;
     }
   };
+
+  inline Hash StormReflAdditiveHash(const char * str, Hash hash)
+  {
+    while (*str != 0)
+    {
+      hash = crc32additive(hash, *str);
+      str++;
+    }
+
+    return crc32additive(hash, 0);
+  }
+
+  template <typename T>
+  Hash StormReflHashType(Hash hash)
+  {
+    hash = StormReflAdditiveHash(StormReflTypeInfo<T>::GetName(), hash);
+
+    auto visitor = [&](auto f)
+    {
+      hash = StormReflAdditiveHash(f.GetName(), hash);
+      hash = StormReflAdditiveHash(f.GetType(), hash);
+    };
+
+    hash = crc32additive(hash, 1);
+    hash = crc32additive(hash, 2);
+
+    T * t = nullptr;
+    StormReflFieldIterator<T, decltype(visitor), StormReflGetFieldCount<T>()> itr;
+    itr(*t, visitor);
+    return hash;
+  }
+
+  template <typename T, int I>
+  struct StormReflHashFileTypes
+  {
+    static Hash GetHash(Hash hash)
+    {
+      using Type = typename T::template type_info<I - 1>::type;
+      return StormReflHashFileTypes<T, I - 1>::GetHash(StormReflHashType<Type>(hash));
+    }
+  };
+
+  template <typename T>
+  struct StormReflHashFileTypes<T, 0>
+  {
+    static Hash GetHash(Hash hash)
+    {
+      return hash;
+    }
+  };
 }
+

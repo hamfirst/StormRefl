@@ -108,4 +108,17 @@ void StormReflElementwiseCopy(T & a, const T & b)
   copier(a, b);
 }
 
+template <typename T>
+uint32_t StormReflGetAdditiveHashForType(Hash hash)
+{
+  return StormReflMetaHelpers::StormReflHashType<T>(hash);
+}
+
+template <typename FileInfoType>
+uint32_t StormReflGetAdditiveHashForFile(Hash hash)
+{
+  return StormReflMetaHelpers::StormReflHashFileTypes<FileInfoType, FileInfoType::types_n>::GetHash(hash);
+}
+
+
 

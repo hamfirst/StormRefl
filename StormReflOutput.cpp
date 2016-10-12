@@ -67,6 +67,17 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
                                                        const std::vector<ReflectedEnum> & enum_data,
                                                        const std::vector<std::string> & headers)
 {
+  std::string stem;
+  for (auto c : fs::path(filename).stem().string())
+  {
+    if (c == '.')
+    {
+      break;
+    }
+
+    stem.push_back(c);
+  }
+
   auto cur_path = fs::canonical(fs::path(filename));
   auto new_path = ConvertFileToMeta(filename);
   auto fp = _wfopen(new_path.c_str(), L"wt");
@@ -259,7 +270,25 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       }
     }
   }
-  
+
+  fprintf(fp, "namespace StormReflFileInfo\n");
+  fprintf(fp, "{\n");
+  fprintf(fp, "  struct %s\n", stem.c_str());
+  fprintf(fp, "  {\n");
+  fprintf(fp, "    static const int types_n = %d;\n", class_data.size());
+  fprintf(fp, "    template <int i> struct type_info { using type = void; };\n");
+  fprintf(fp, "  };\n\n");
+
+  for (std::size_t index = 0; index < class_data.size(); index++)
+  {
+    fprintf(fp, "  template <>\n");
+    fprintf(fp, "  struct %s::type_info<%d>\n", stem.c_str(), index);
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    using type = ::%s;\n", class_data[index].m_Name.c_str());
+    fprintf(fp, "  };\n\n");
+  }
+
+  fprintf(fp, "}\n\n");
   fclose(fp);
 
 }
