@@ -108,6 +108,37 @@ void StormReflElementwiseCopy(T & a, const T & b)
   copier(a, b);
 }
 
+template <typename T, int MemberIndex>
+constexpr int StormReflGetAnnotationCount()
+{
+  return StormReflMetaHelpers::StormReflGetAnnotationCount<T, MemberIndex>();
+}
+
+template <typename C, int MemberIndex, typename Visitor>
+void StormReflVisitFieldAnnotations(Visitor & visitor)
+{
+  StormReflAnnotationIterator<C, Visitor, MemberIndex, StormReflGetAnnotationCount<C, MemberIndex>()> itr;
+  itr(visitor);
+}
+
+template <class C, int MemberIndex>
+bool StormReflHasAnnotation(const char * annotation)
+{
+  return StormReflMetaHelpers::StormReflHasAnnotation<C, MemberIndex>(annotation);
+}
+
+template <typename C, typename Visitor>
+void StormReflVisitFieldsWithAnnotation(const char * annotation, Visitor & visitor)
+{
+  StormReflMetaHelpers::StormReflVisitFieldsWithAnnotation<C, Visitor>(annotation, visitor);
+}
+
+template <typename C, typename Visitor>
+void StormReflVisitFieldsWithAnnotation(C & c, const char * annotation, Visitor & visitor)
+{
+  StormReflMetaHelpers::StormReflVisitFieldsWithAnnotation<C, Visitor>(annotation, visitor);
+}
+
 template <typename T>
 uint32_t StormReflGetAdditiveHashForType(Hash hash)
 {

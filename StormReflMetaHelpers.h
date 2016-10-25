@@ -35,6 +35,13 @@ namespace StormReflMetaHelpers
   template <class C, class Visitor, int I>
   struct StormReflFieldIterator
   {
+    void operator()(Visitor & v)
+    {
+      auto f = typename StormReflTypeInfo<std::decay_t<C>>::template field_data_static<StormReflTypeInfo<std::decay_t<C>>::fields_n - I>{};
+      v(f);
+      StormReflFieldIterator <C, Visitor, I - 1>() (v);
+    }
+
     void operator()(C& c, Visitor & v)
     {
       auto f = typename StormReflTypeInfo<std::decay_t<C>>::template field_data<StormReflTypeInfo<std::decay_t<C>>::fields_n - I, C>(c);
@@ -55,6 +62,11 @@ namespace StormReflMetaHelpers
   template <class C, class Visitor>
   struct StormReflFieldIterator<C, Visitor, 0>
   {
+    void operator()(Visitor & v)
+    {
+
+    }
+
     void operator()(C& c, Visitor & v)
     {
 
@@ -303,6 +315,69 @@ namespace StormReflMetaHelpers
     StormReflFieldIterator<T, decltype(visitor), StormReflGetFieldCount<T>()> itr;
     itr(*t, visitor);
     return hash;
+  }
+
+  template <typename T, int MemberIndex>
+  constexpr int StormReflGetAnnotationCount()
+  {
+    return StormReflTypeInfo<T>::template annotations<MemberIndex>::annotations_n;
+  }
+
+  template <typename C, typename Visitor, int MemberIndex, int AnnotationIndex>
+  struct StormReflAnnotationIterator
+  {
+    void operator()(Visitor & v)
+    {
+      constexpr int AnnotationIndexInv = typename StormReflTypeInfo<std::decay_t<C>>::template annotations<MemberIndex>::annotations_n - AnnotationIndex;
+
+      auto a = typename StormReflTypeInfo<std::decay_t<C>>::template annotations<MemberIndex>::template annoation<AnnotationIndexInv>{};
+      v(a);
+      StormReflAnnotationIterator <C, Visitor, MemberIndex, AnnotationIndex - 1>() (v);
+    }
+  };
+
+  template <typename C, typename Visitor, int MemberIndex>
+  struct StormReflAnnotationIterator<C, Visitor, MemberIndex, 0>
+  {
+    void operator()(Visitor & v)
+    {
+
+    }
+  };
+
+  template <typename C, int MemberIndex>
+  bool StormReflHasAnnotation(const char * annotation)
+  {
+    bool has_annotation = false;
+    uint32_t annotation_hash = crc32(annotation);
+
+    auto visitor = [&](auto a)
+    {
+      if (a.GetAnnotationHash() == annotation_hash)
+      {
+        has_annotation = true;
+      }
+    };
+
+    StormReflAnnotationIterator<C, decltype(visitor), MemberIndex, StormReflGetAnnotationCount<C, MemberIndex>()> itr;
+    itr(visitor);
+
+    return has_annotation;
+  }
+
+  template <typename T, typename Visitor>
+  void StormReflVisitFieldsWithAnnotation(const char * annotation, Visitor & v)
+  {
+    auto visitor = [&](auto f)
+    {
+      if (StormReflHasAnnotation<T, std::decay_t<decltype(f)>::GetFieldIndex()>(annotation))
+      {
+        v(f);
+      }
+    };
+
+    StormReflMetaHelpers::StormReflFieldIterator<T, decltype(visitor), StormReflGetFieldCount<T>()> itr;
+    itr(visitor);
   }
 
   template <typename T, int I>

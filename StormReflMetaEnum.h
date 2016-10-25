@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StormReflMetaInfoBase.h"
 #include "StormReflMetaEnumHelpers.h"
 
 template <class EnumType>

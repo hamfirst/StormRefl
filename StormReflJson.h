@@ -1174,7 +1174,7 @@ struct StormReflJson<bool, void>
     else if (StormReflJsonMatchStr(str, result, "false"))
     {
       t = false;
-      return false;
+      return true;
     }
     else
     {

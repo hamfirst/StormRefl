@@ -204,7 +204,8 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
           fprintf(fp, "template <>\n");
           fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>::annoation<%d>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
           fprintf(fp, "{\n");
-          fprintf(fp, "  static constexpr const char * str = \"%s\";\n", field.m_Attrs[attr_index].c_str());
+          fprintf(fp, "  static constexpr const char * GetAnnotation() { return \"%s\"; }\n", field.m_Attrs[attr_index].c_str());
+          fprintf(fp, "  static constexpr uint32_t GetAnnotationHash() { return 0x%08X; }\n", crc32(field.m_Attrs[attr_index]));
           fprintf(fp, "};\n\n");
         }
       }
