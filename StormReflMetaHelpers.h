@@ -328,7 +328,8 @@ namespace StormReflMetaHelpers
   {
     void operator()(Visitor & v)
     {
-      constexpr int AnnotationIndexInv = typename StormReflTypeInfo<std::decay_t<C>>::template annotations<MemberIndex>::annotations_n - AnnotationIndex;
+      using AnnotationTypeInfo = typename StormReflTypeInfo<std::decay_t<C>>::template annotations<MemberIndex>;
+      constexpr int AnnotationIndexInv = AnnotationTypeInfo::annotations_n - AnnotationIndex;
 
       auto a = typename StormReflTypeInfo<std::decay_t<C>>::template annotations<MemberIndex>::template annoation<AnnotationIndexInv>{};
       v(a);
