@@ -194,7 +194,12 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  field_data(Self & self) : self(self) {}\n");
       fprintf(fp, "  match_const_t<Self, %s> & Get() { return self.%s; }\n", field.m_Type.c_str(), field.m_Name.c_str());
       fprintf(fp, "  std::add_const_t<std::remove_reference_t<%s>> & Get() const { return self.%s; }\n", field.m_Type.c_str(), field.m_Name.c_str());
-      fprintf(fp, "  void SetDefault() { self.%s = StormReflTypeInfo<%s>::GetDefault().%s; }\n", field.m_Name.c_str(), cl.m_Name.c_str(), field.m_Name.c_str());
+
+      if (cl.m_NoDefault == false)
+      {
+        fprintf(fp, "  void SetDefault() { self.%s = StormReflTypeInfo<%s>::GetDefault().%s; }\n", field.m_Name.c_str(), cl.m_Name.c_str(), field.m_Name.c_str());
+      }
+
       fprintf(fp, "};\n\n");
 
       if (field.m_Attrs.size() > 0)
