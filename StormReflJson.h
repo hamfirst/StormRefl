@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cwchar>
+#include <climits>
 
 #include "StormReflMetaFuncs.h"
 #include "StormReflMetaEnum.h"
@@ -619,7 +620,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
       sb += f.GetName();
       sb += "\" : ";
 
-      using member_type = decltype(f)::member_type;
+      using member_type = typename decltype(f)::member_type;
 
       StormReflJson<member_type>::EncodePretty(f.Get(), sb, indent + 1);
       if (f.GetFieldIndex() < StormReflTypeInfo<T>::fields_n - 1)
@@ -883,7 +884,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   static void Encode(const T & t, StringBuilder & sb)
   {
     char buffer[1024];
-    snprintf(buffer, sizeof(buffer), "%llu", (uint64_t)t);
+    snprintf(buffer, sizeof(buffer), "%llu", (unsigned long long)t);
     sb += buffer;
   }
 
@@ -986,7 +987,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   static void Encode(const T & t, StringBuilder & sb)
   {
     char buffer[1024];
-    snprintf(buffer, sizeof(buffer), "%lli", (int64_t)t);
+    snprintf(buffer, sizeof(buffer), "%lli", (long long)t);
     sb += buffer;
   }
 

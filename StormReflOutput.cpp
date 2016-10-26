@@ -87,7 +87,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   }
 
   fprintf(fp, "#pragma once\n\n");
-  fprintf(fp, "#include <StormRefl\/StormReflMetaInfoBase.h>\n\n");
+  fprintf(fp, "#include <StormRefl/StormReflMetaInfoBase.h>\n\n");
 
   fprintf(fp, "#include \"%s\"\n", cur_path.filename().u8string().c_str());
   for (auto & header : headers)

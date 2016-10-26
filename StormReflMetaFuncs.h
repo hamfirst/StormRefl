@@ -117,7 +117,7 @@ constexpr int StormReflGetAnnotationCount()
 template <typename C, int MemberIndex, typename Visitor>
 void StormReflVisitFieldAnnotations(Visitor & visitor)
 {
-  StormReflAnnotationIterator<C, Visitor, MemberIndex, StormReflGetAnnotationCount<C, MemberIndex>()> itr;
+  StormReflMetaHelpers::StormReflAnnotationIterator<C, Visitor, MemberIndex, StormReflGetAnnotationCount<C, MemberIndex>()> itr;
   itr(visitor);
 }
 

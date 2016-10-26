@@ -7,7 +7,7 @@ namespace StormReflMetaHelpers
   {
     void operator()(Visitor & v)
     {
-      using info_type = typename StormReflEnumInfo<std::decay_t<C>>;
+      using info_type = StormReflEnumInfo<std::decay_t<C>>;
       auto f = info_type::template elems<info_type::elems_n - I>();
       v(f);
       StormReflEnumIterator<C, Visitor, I - 1> itr; itr(v);
