@@ -23,6 +23,13 @@ fs::path ConvertFileToMeta(const std::string & filename)
   return new_path;
 }
 
+std::string EnsurePathForwardSlash(const fs::path & path)
+{
+  std::string path_str = path.u8string();
+  std::replace(path_str.begin(), path_str.end(), '\\', '/');
+  return path_str;
+}
+
 fs::path RelativePath(const fs::path &path, const fs::path &relative_to)
 {
   // create absolute paths
@@ -89,12 +96,12 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   fprintf(fp, "#pragma once\n\n");
   fprintf(fp, "#include <StormRefl/StormReflMetaInfoBase.h>\n\n");
 
-  fprintf(fp, "#include \"%s\"\n", cur_path.filename().u8string().c_str());
+  fprintf(fp, "#include \"%s\"\n", EnsurePathForwardSlash(cur_path.filename()).c_str());
   for (auto & header : headers)
   {
     if (header.find(".refl.") != std::string::npos)
     {
-      fprintf(fp, "#include \"%s\"\n", ConvertFileToMeta(header).u8string().c_str());
+      fprintf(fp, "#include \"%s\"\n", EnsurePathForwardSlash(ConvertFileToMeta(header)).c_str());
     }
   }
 
@@ -170,11 +177,11 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "template <>\n");
       fprintf(fp, "struct StormReflTypeInfo<%s>::field_data_static<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
-      fprintf(fp, "  using member_type = %s;\n", field.m_Type.c_str());
+      fprintf(fp, "  using member_type = %s; // %s\n", field.m_Type.c_str(), field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", field.m_Name.c_str());
-      fprintf(fp, "  static constexpr auto GetType() { return \"%s\"; }\n", field.m_Type.c_str());
+      fprintf(fp, "  static constexpr auto GetType() { return \"%s\"; }\n", field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr unsigned GetFieldNameHash() { return 0x%08X; }\n", crc32(field.m_Name));
-      fprintf(fp, "  static constexpr unsigned GetTypeNameHash() { return 0x%08X; }\n", crc32(field.m_Type));
+      fprintf(fp, "  static constexpr unsigned GetTypeNameHash() { return 0x%08X; }\n", crc32(field.m_CannonicalType));
       fprintf(fp, "  static constexpr auto GetFieldIndex() { return %d%s; }\n", index, base_str.c_str());
       fprintf(fp, "  static constexpr auto GetMemberPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
       fprintf(fp, "};\n\n");

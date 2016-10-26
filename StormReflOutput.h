@@ -21,6 +21,7 @@ struct ReflectedField
 {
   std::string m_Name;
   std::string m_Type;
+  std::string m_CannonicalType;
 
   std::vector<std::string> m_Attrs;
 };

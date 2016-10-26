@@ -128,8 +128,10 @@ public:
             continue;
           }
 
-          auto qual_type = field->getType().getCanonicalType();
+          auto qual_type = field->getType();
+          auto qual_cannon_type = field->getType().getCanonicalType();
           auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext);
+          auto cannon_str = clang::TypeName::getFullyQualifiedName(qual_cannon_type, m_ASTContext);
           auto name_str = std::string(field->getName());
 
           bool ignore_field = false;
@@ -164,7 +166,7 @@ public:
 
           if (!ignore_field)
           {
-            class_data.m_Fields.emplace_back(ReflectedField{ name_str, type_str, annotations });
+            class_data.m_Fields.emplace_back(ReflectedField{ name_str, type_str, cannon_str, annotations });
           }
         }
 
