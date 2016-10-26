@@ -4,6 +4,9 @@
 
 namespace StormReflMetaHelpers
 {
+  template <class StringBuilder>
+  void StormReflCallSerializeJsonParameterPack(StringBuilder & sb);
+
   template <class StringBuilder, typename Arg, typename ... Args>
   void StormReflCallSerializeJsonParameterPack(StringBuilder & sb, Arg && arg, Args && ... args)
   {

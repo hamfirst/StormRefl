@@ -207,6 +207,9 @@ namespace StormReflMetaHelpers
     }
   };
 
+  template <typename Deserializer, typename Callable, typename ReturnType>
+  bool StormReflCallDeserialize(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)() const, ReturnType * ret_val);
+
   template <typename Deserializer, typename Callable, typename ReturnType, typename FuncArg, typename ... FuncArgs>
   bool StormReflCallDeserialize(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val)
   {
