@@ -23,11 +23,13 @@ namespace StormReflMetaHelpers
   template <> struct StormReflCheckReflectable<int8_t, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<int16_t, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<int32_t, void> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<int64_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<long, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<long long, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<uint8_t, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<uint16_t, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<uint32_t, void> { static const bool value = false; };
-  template <> struct StormReflCheckReflectable<uint64_t, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<unsigned long, void> { static const bool value = false; };
+  template <> struct StormReflCheckReflectable<unsigned long long, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<float, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<double, void> { static const bool value = false; };
 

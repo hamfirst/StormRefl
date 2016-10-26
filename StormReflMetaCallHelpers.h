@@ -231,6 +231,9 @@ namespace StormReflMetaHelpers
     return true;
   }
 
+  template <bool Valid>
+  struct StormReflCallableAdditive;
+
   template <typename Deserializer, typename Callable, typename ReturnType, typename FuncArg, typename ProvidedArg, typename ... FuncArgs, typename ... ProvidedArgs>
   static bool StormReflCreateCallableAdditive(Deserializer && deserializer, Callable & callable, ReturnType(Callable::*ptr)(FuncArg, FuncArgs...) const, ReturnType * ret_val,
     ProvidedArg && provided_arg, ProvidedArgs && ... provided_args)

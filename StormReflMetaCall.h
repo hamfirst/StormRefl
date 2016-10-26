@@ -59,8 +59,8 @@ auto StormReflCallSerialize(Serializer & serializer, ReturnType(C::*func)(Args..
 }
 
 
-template <typename Deserializer, typename T, typename ReturnType, typename ... Args>
-ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...))
+template <typename Deserializer, typename T, typename ReturnType, typename ... Args, typename ... ProvidedArgs>
+ReturnType StormReflCall(Deserializer & deserializer, T & t, ReturnType(T::*func)(Args...), ProvidedArgs && ... args)
 {
   StormReflMetaHelpers::StormReflReturnBuffer<ReturnType> ret_buffer;
   if (StormReflMetaHelpers::StormReflCreateCallable(deserializer, t, func, (ReturnType *)ret_buffer.m_Buffer, std::forward<ProvidedArgs>(args)...))
