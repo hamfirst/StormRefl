@@ -312,7 +312,7 @@ namespace StormReflMetaHelpers
     hash = crc32additive(hash, 2);
 
     T * t = nullptr;
-    StormReflFieldIterator<T, decltype(visitor), StormReflTypeInfo<std::decay_t<C>>::fields_n> itr;
+    StormReflFieldIterator<T, decltype(visitor), StormReflTypeInfo<std::decay_t<T>>::fields_n> itr;
     itr(*t, visitor);
     return hash;
   }
@@ -376,7 +376,7 @@ namespace StormReflMetaHelpers
       }
     };
 
-    StormReflMetaHelpers::StormReflFieldIterator<T, decltype(visitor), StormReflGetFieldCount<T>()> itr;
+    StormReflMetaHelpers::StormReflFieldIterator<T, decltype(visitor), StormReflTypeInfo<std::decay_t<T>>::fields_n> itr;
     itr(visitor);
   }
 

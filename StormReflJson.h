@@ -6,6 +6,8 @@
 #include "StormReflMetaFuncs.h"
 #include "StormReflMetaEnum.h"
 
+#pragma warning(disable:4996)
+
 inline bool StormReflJsonParseOverValue(const char * str, const char *& result);
 
 namespace StormReflJsonHelpers
@@ -129,8 +131,7 @@ inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, cons
           char utf8[MB_LEN_MAX];
           std::mbstate_t state{};
 
-          std::size_t len;
-          wcrtomb_s(&len, utf8, val, &state);
+          std::size_t len = wcrtomb(utf8, val, &state);
           for (std::size_t index = 0; index < len; index++)
           {
             hash = crc32additive(hash, utf8[index]);
@@ -638,7 +639,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
     sb += '}';
   }
 
-  template <class T, class StringBuilder>
+  template <class StringBuilder>
   void StormReflEncodeJson(const T & t, StringBuilder & sb)
   {
     StormReflJson<T>::Encode(t, sb);

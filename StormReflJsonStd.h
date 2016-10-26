@@ -268,8 +268,7 @@ struct StormReflJson<std::string, void>
           char utf8[MB_LEN_MAX];
           std::mbstate_t state{};
 
-          std::size_t len;
-          wcrtomb_s(&len, utf8, val, &state);
+          std::size_t len = wcrtomb(utf8, val, &state);
           for (std::size_t index = 0; index < len; index++)
           {
             t.push_back(utf8[index]);
