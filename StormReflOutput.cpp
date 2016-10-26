@@ -23,6 +23,13 @@ fs::path ConvertFileToMeta(const std::string & filename)
   return new_path;
 }
 
+std::string EnsurePathForwardSlash(const fs::path & path)
+{
+  std::string path_str = path.u8string();
+  std::replace(path_str.begin(), path_str.end(), '\\', '/');
+  return path_str;
+}
+
 fs::path RelativePath(const fs::path &path, const fs::path &relative_to)
 {
   // create absolute paths
@@ -89,12 +96,12 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   fprintf(fp, "#pragma once\n\n");
   fprintf(fp, "#include <StormRefl/StormReflMetaInfoBase.h>\n\n");
 
-  fprintf(fp, "#include \"%s\"\n", cur_path.filename().u8string().c_str());
+  fprintf(fp, "#include \"%s\"\n", EnsurePathForwardSlash(cur_path.filename()).c_str());
   for (auto & header : headers)
   {
     if (header.find(".refl.") != std::string::npos)
     {
-      fprintf(fp, "#include \"%s\"\n", ConvertFileToMeta(header).u8string().c_str());
+      fprintf(fp, "#include \"%s\"\n", EnsurePathForwardSlash(ConvertFileToMeta(header)).c_str());
     }
   }
 
