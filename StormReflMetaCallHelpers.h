@@ -121,14 +121,14 @@ namespace StormReflMetaHelpers
 
   template <typename T, int FuncIndex, int ParamIndex>
   struct StormReflParamFuncInfo<T, FuncIndex, ParamIndex, false> : 
-    StormReflParamDetailInfo<T, FuncIndex, ParamIndex, ParamIndex < StormReflFuncInfo<T>::template func_data_static<FuncIndex>::params_n>
+    StormReflParamDetailInfo<T, FuncIndex, ParamIndex, ParamIndex >= StormReflFuncInfo<T>::template func_data_static<FuncIndex>::params_n>
   {
 
   };
 
   template <typename T, int FuncIndex, int ParamIndex>
   struct StormReflParamInfo : 
-    StormReflParamFuncInfo<T, FuncIndex, ParamIndex, FuncIndex < StormReflFuncInfo<T>::funcs_n>
+    StormReflParamFuncInfo<T, FuncIndex, ParamIndex, FuncIndex >= StormReflFuncInfo<T>::funcs_n>
   {
 
   };

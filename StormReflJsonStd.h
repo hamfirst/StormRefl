@@ -117,7 +117,7 @@ template <class K, class T>
 struct StormReflJson<std::map<K, T>, void>
 {
   template <class StringBuilder>
-  static void Encode(std::map<K, T> & t, StringBuilder & sb)
+  static void Encode(const std::map<K, T> & t, StringBuilder & sb)
   {
     if (t.size() == 0)
     {
@@ -145,7 +145,7 @@ struct StormReflJson<std::map<K, T>, void>
   }
 
   template <class StringBuilder>
-  static void EncodePretty(std::map<K, T> & t, StringBuilder & sb, int indent)
+  static void EncodePretty(const std::map<K, T> & t, StringBuilder & sb, int indent)
   {
     if (t.size() == 0)
     {
@@ -175,6 +175,53 @@ struct StormReflJson<std::map<K, T>, void>
 
     StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += '}';
+  }
+
+  static bool Parse(std::map<K, T> & t, const char * str, const char *& result)
+  {
+    while (true)
+    {
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str == '}')
+      {
+        str++;
+        result = str;
+        return true;
+      }
+
+      K key;
+      if (StormReflParseJson(key, str, str) == false)
+      {
+        return false;
+      }
+
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str != ':')
+      {
+        return false;
+      }
+      
+      str++;
+      StormReflJsonAdvanceWhiteSpace(str);
+
+      T value;
+      if (StormReflParseJson(value, str, str) == false)
+      {
+        return false;
+      }
+
+      t.emplace(std::make_pair(key, value));
+
+      StormReflJsonAdvanceWhiteSpace(str);
+      if (*str == ',')
+      {
+        str++;
+      }
+      else if (*str != '}')
+      {
+        return false;
+      }
+    }
   }
 };
 
@@ -342,7 +389,7 @@ struct StormReflJson<std::pair<First, Second>, void>
 
     str++;
 
-    if (StormReflJson<Second>::Parse(t.second, str, str) == false)
+    if (StormReflParseJson(t.second, str, str) == false)
     {
       return false;
     }
