@@ -446,6 +446,8 @@ void StormReflJsonEncodeString(const char * str, StringBuilder & sb)
   sb += '\"';
 }
 
+
+
 template <class T, class Enable = void>
 struct StormReflJson
 {
@@ -886,7 +888,16 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   {
     char buffer[1024];
     snprintf(buffer, sizeof(buffer), "%llu", (unsigned long long)t);
+    if (sizeof(T) > 4)
+    {
+      sb += '\"';
+    }
+
     sb += buffer;
+    if (sizeof(T) > 4)
+    {
+      sb += '\"';
+    }
   }
 
   template <class StringBuilder>
@@ -898,6 +909,14 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   static bool Parse(T & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
+
+    bool is_string = false;
+    if (*str == '\"')
+    {
+      str++;
+      is_string = true;
+    }
+
     bool negative;
     int flow = 0;
 
@@ -965,6 +984,16 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
       exp = static_cast<int8_t>(exp_negative ? -uexp : uexp);
     }
 
+    if (is_string)
+    {
+      if (*str != '\"')
+      {
+        return false;
+      }
+
+      str++;
+    }
+
     result = str;
     if (exp < 0)
     {
@@ -989,7 +1018,18 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   {
     char buffer[1024];
     snprintf(buffer, sizeof(buffer), "%lli", (long long)t);
+
+    if (sizeof(T) > 4)
+    {
+      sb += '\"';
+    }
+
     sb += buffer;
+
+    if (sizeof(T) > 4)
+    {
+      sb += '\"';
+    }
   }
 
   template <class StringBuilder>
@@ -1003,6 +1043,14 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     using IntType = std::make_unsigned_t<T>;
 
     StormReflJsonAdvanceWhiteSpace(str);
+
+    bool is_string = false;
+    if (*str == '\"')
+    {
+      str++;
+      is_string = true;
+    }
+
     bool negative;
     int flow = 0;
 
@@ -1068,6 +1116,16 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
 
       uint8_t uexp = StormReflParseDigits<uint8_t, int8_t>(str, exp_negative);
       exp = static_cast<int8_t>(exp_negative ? -uexp : uexp);
+    }
+
+    if (is_string)
+    {
+      if (*str != '\"')
+      {
+        return false;
+      }
+
+      str++;
     }
 
     result = str;
