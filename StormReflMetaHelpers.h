@@ -207,7 +207,7 @@ namespace StormReflMetaHelpers
       auto end = a + i;
       while (a != end)
       {
-        copier(a, b);
+        copier(*a, *b);
 
         ++a;
         ++b;
@@ -215,7 +215,32 @@ namespace StormReflMetaHelpers
     }
   };
 
+  template <typename T>
+  struct StormReflElementwiseMover
+  {
+    void operator()(T & a, T & b)
+    {
+      a = std::move(b);
+    }
+  };
 
+  template <typename T, int i>
+  struct StormReflElementwiseMover<T[i]>
+  {
+    void operator()(T * a, T * b)
+    {
+      StormReflElementwiseMover<T> mover;
+
+      auto end = a + i;
+      while (a != end)
+      {
+        mover(*a, *b);
+
+        ++a;
+        ++b;
+      }
+    }
+  };
 
   template <class C, class Enable = void>
   struct StormReflEquality

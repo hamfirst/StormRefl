@@ -108,6 +108,14 @@ void StormReflElementwiseCopy(T & a, const T & b)
   copier(a, b);
 }
 
+template <typename T>
+void StormReflElementwiseMove(T & a, T & b)
+{
+  StormReflMetaHelpers::StormReflElementwiseMover<T> mover;
+  mover(a, b);
+}
+
+
 template <typename T, int MemberIndex>
 constexpr int StormReflGetAnnotationCount()
 {
