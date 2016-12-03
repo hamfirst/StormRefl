@@ -116,6 +116,8 @@ struct StormReflJson<std::vector<T>, void>
 template <class K, class T>
 struct StormReflJson<std::map<K, T>, void>
 {
+  const static bool IsStringKey = std::is_integral<K>::value && sizeof(K) >= 8;
+
   template <class StringBuilder>
   static void Encode(const std::map<K, T> & t, StringBuilder & sb)
   {
@@ -126,19 +128,39 @@ struct StormReflJson<std::map<K, T>, void>
     }
 
     auto itr = t.begin();
-    sb += "{\"";
-    StormReflJson<K>::Encode(itr->first, sb);
-    sb += "\":";
-    StormReflJson<T>::Encode(itr->second, sb);
-    itr++;
-
-    while(itr != t.end())
+    if (IsStringKey)
     {
-      sb += ",\"";
+      sb += '{';
+      StormReflJson<K>::Encode(itr->first, sb);
+      sb += ':';
+      StormReflJson<T>::Encode(itr->second, sb);
+      itr++;
+
+      while (itr != t.end())
+      {
+        sb += ',';
+        StormReflJson<K>::Encode(itr->first, sb);
+        sb += ':';
+        StormReflJson<T>::Encode(itr->second, sb);
+        itr++;
+      }
+    }
+    else
+    {
+      sb += "{\"";
       StormReflJson<K>::Encode(itr->first, sb);
       sb += "\":";
       StormReflJson<T>::Encode(itr->second, sb);
       itr++;
+
+      while (itr != t.end())
+      {
+        sb += ",\"";
+        StormReflJson<K>::Encode(itr->first, sb);
+        sb += "\":";
+        StormReflJson<T>::Encode(itr->second, sb);
+        itr++;
+      }
     }
 
     sb += '}';
@@ -154,23 +176,46 @@ struct StormReflJson<std::map<K, T>, void>
     }
 
     auto itr = t.begin();
-    sb += "{\n";
-    StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
-    sb += '\"';
-    StormReflJson<K>::Encode(itr->first, sb);
-    sb += "\":";
-    StormReflJson<T>::EncodePretty(itr->second, sb);
-    itr++;
 
-    while (itr != t.end())
+    if (IsStringKey)
     {
-      sb += ",\n";
+      sb += "{\n";
+      StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
+      StormReflJson<K>::Encode(itr->first, sb);
+      sb += ':';
+      StormReflJson<T>::EncodePretty(itr->second, sb, indent + 1);
+      itr++;
+
+      while (itr != t.end())
+      {
+        sb += ",\n";
+        StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
+        StormReflJson<K>::Encode(itr->first, sb);
+        sb += ':';
+        StormReflJson<T>::EncodePretty(itr->second, sb, indent + 1);
+        itr++;
+      }
+    }
+    else
+    {
+      sb += "{\n";
       StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
       sb += '\"';
       StormReflJson<K>::Encode(itr->first, sb);
       sb += "\":";
-      StormReflJson<T>::EncodePretty(itr->second, sb);
+      StormReflJson<T>::EncodePretty(itr->second, sb, indent + 1);
       itr++;
+
+      while (itr != t.end())
+      {
+        sb += ",\n";
+        StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
+        sb += '\"';
+        StormReflJson<K>::Encode(itr->first, sb);
+        sb += "\":";
+        StormReflJson<T>::EncodePretty(itr->second, sb, indent + 1);
+        itr++;
+      }
     }
 
     StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
@@ -190,9 +235,33 @@ struct StormReflJson<std::map<K, T>, void>
       }
 
       K key;
-      if (StormReflParseJson(key, str, str) == false)
+
+      if (IsStringKey)
       {
-        return false;
+        if (StormReflParseJson(key, str, str) == false)
+        {
+          return false;
+        }
+      }
+      else
+      {
+        if (*str != '\"')
+        {
+          return false;
+        }
+
+        str++;
+        if (StormReflParseJson(key, str, str) == false)
+        {
+          return false;
+        }
+
+        if (*str != '\"')
+        {
+          return false;
+        }
+
+        str++;
       }
 
       StormReflJsonAdvanceWhiteSpace(str);
