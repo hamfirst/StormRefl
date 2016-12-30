@@ -71,6 +71,7 @@ struct StormReflJson<std::vector<T>, void>
 
   static bool Parse(std::vector<T> & t, const char * str, const char *& result)
   {
+    t.clear();
     if (*str != '[')
     {
       return false;
@@ -311,6 +312,7 @@ struct StormReflJson<std::string, void>
 
   static bool Parse(std::string & t, const char * str, const char *& result)
   {
+    t.clear();
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '\"')
     {
