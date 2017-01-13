@@ -493,13 +493,13 @@ namespace StormReflJsonHelpers
         sb += ',';
       }
 
-      TupleArg<N - 1>::Encode(t, sb);
+      TupleArg<N - 1, Types...>::Encode(t, sb);
     }
 
     static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
     {
       using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<ElemIndex>(t))>>;
-      if (StormReflJson<elem_type>::Parse(std::get<ElemIndex>(t), str, str) == false)
+      if (StormReflJson<elem_type>::Parse(std::template get<ElemIndex>(t), str, str) == false)
       {
         return false;
       }
@@ -515,7 +515,7 @@ namespace StormReflJsonHelpers
         str++;
       }
 
-      return TupleArg<N - 1>::Parse(t, str, result);
+      return TupleArg<N - 1, Types...>::Parse(t, str, result);
     }
   };
 
@@ -543,7 +543,7 @@ struct StormReflJson<std::tuple<Types...>, void>
   static void Encode(const std::tuple<Types...> & t, StringBuilder & sb)
   {
     sb += '[';
-    StormReflJsonHelpers::TupleArg<0>::Encode(t, sb);
+    StormReflJsonHelpers::TupleArg<sizeof...(Types), Types...>::Encode(t, sb);
     sb += ']';
   }
 
@@ -551,7 +551,7 @@ struct StormReflJson<std::tuple<Types...>, void>
   static void EncodePretty(const std::tuple<Types...> & t, StringBuilder & sb, int indent)
   {
     sb += "[ ";
-    StormReflJsonHelpers::TupleArg<sizeof...(Types)>::Encode(t, sb);
+    StormReflJsonHelpers::TupleArg<sizeof...(Types), Types...>::Encode(t, sb);
     sb += " ]";
   }
 
@@ -565,7 +565,7 @@ struct StormReflJson<std::tuple<Types...>, void>
 
     str++;
 
-    if (StormReflJsonHelpers::TupleArg<sizeof...(Types)>::Parse(t, str, str) == false)
+    if (StormReflJsonHelpers::template TupleArg<sizeof...(Types), Types...>::Parse(t, str, str) == false)
     {
       return false;
     }

@@ -228,6 +228,7 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
       case 'n':
       case 'r':
       case 't':
+        break;
       case 'u':
         {
           for (int index = 0; index < 4; index++)
