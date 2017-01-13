@@ -140,6 +140,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
 
     if (cl.m_Base.size() == 0)
     {
+      fprintf(fp, "  using MyBase = void;\n");
       fprintf(fp, "  static constexpr int fields_n = %d;\n", cl.m_Fields.size());
       fprintf(fp, "  template <int N> struct field_data_static {};\n");
       fprintf(fp, "  template <int N, typename Self> struct field_data {};\n");
