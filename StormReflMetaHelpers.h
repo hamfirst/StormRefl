@@ -5,6 +5,8 @@
 namespace StormReflMetaHelpers
 {
   template<typename T, typename Enable = void> struct StormReflCheckReflectable {
+    static_assert(std::is_class<T>::value, "Not a class");
+
     struct Fallback { bool is_reflectable; };
     struct Derived : T, Fallback { };
 
@@ -295,7 +297,7 @@ namespace StormReflMetaHelpers
         auto & src_member = src_f.Get();
         auto & dst_member = dst_f.Get();
 
-        using MemberType = typename std::template remove_reference_t<decltype(dst_member)>;
+        using MemberType = typename std::template remove_const_t<std::template remove_reference_t<decltype(dst_member)>>;
         changed &= StormReflMetaHelpers::StormReflEquality<MemberType>::Compare(src_member, dst_member);
       };
 
