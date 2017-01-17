@@ -18,28 +18,28 @@ constexpr int StormReflGetFieldCount()
 }
 
 template<class C, class Visitor>
-void StormReflVisitEach(C & c, Visitor & v)
+void StormReflVisitEach(C & c, Visitor && v)
 {
   StormReflMetaHelpers::StormReflFieldIterator<C, Visitor, StormReflGetFieldCount<C>()> itr;
   itr(c, v);
 }
 
 template<class C1, class C2, class Visitor>
-void StormReflVisitEach(C1 & c1, C2 & c2, Visitor & v)
+void StormReflVisitEach(C1 & c1, C2 & c2, Visitor && v)
 {
   StormReflMetaHelpers::StormReflFieldIterator<C1, Visitor, StormReflGetFieldCount<C1>()> itr;
   itr(c1, c2, v);
 }
 
 template<class C, class Visitor>
-void StormReflVisitField(C & c, Visitor & v, Hash field_name_hash)
+void StormReflVisitField(C & c, Visitor && v, Hash field_name_hash)
 {
   auto visitor = [&](auto f) { if (f.GetFieldNameHash() == field_name_hash) v(f); };
   StormReflVisitEach(c, visitor);
 }
 
 template<class C, class Visitor>
-void StormReflVisitField(C & c, Visitor & v, czstr field_name)
+void StormReflVisitField(C & c, Visitor && v, czstr field_name)
 {
   Hash hash = crc32(field_name);
   StormReflVisitField(c, v, hash);
