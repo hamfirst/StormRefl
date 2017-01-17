@@ -115,6 +115,21 @@ void StormReflElementwiseMove(T & a, T & b)
   mover(a, b);
 }
 
+template <typename A, typename B>
+void StormReflAggregate(A & a, const B & b)
+{
+  auto visitor = [&](auto f)
+  {
+    auto adder = [&](auto b)
+    {
+      f.Get() += b.Get();
+    };
+
+    StormReflVisitField(b, adder, f.GetFieldNameHash());
+  };
+
+  StormReflVisitEach(a, visitor);
+}
 
 template <typename T, int MemberIndex>
 constexpr int StormReflGetAnnotationCount()
