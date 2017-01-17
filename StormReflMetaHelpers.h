@@ -279,7 +279,7 @@ namespace StormReflMetaHelpers
         auto & src_member = src_f.Get();
         auto & dst_member = dst_f.Get();
 
-        using MemberType = typename std::template remove_reference_t<decltype(src_member)>;
+        using MemberType = typename std::template remove_reference_t<decltype(dst_member)>;
 
         StormReflEquality<MemberType>::Copy(src_member, dst_member);
       };
@@ -295,7 +295,7 @@ namespace StormReflMetaHelpers
         auto & src_member = src_f.Get();
         auto & dst_member = dst_f.Get();
 
-        using MemberType = typename std::template remove_reference_t<decltype(src_member)>;
+        using MemberType = typename std::template remove_reference_t<decltype(dst_member)>;
         changed &= StormReflMetaHelpers::StormReflEquality<MemberType>::Compare(src_member, dst_member);
       };
 
@@ -311,7 +311,7 @@ namespace StormReflMetaHelpers
         auto & src_member = src_f.Get();
         auto & dst_member = dst_f.Get();
 
-        using MemberType = typename std::template remove_reference_t<decltype(src_member)>;
+        using MemberType = typename std::template remove_reference_t<decltype(dst_member)>;
         changed &= StormReflMetaHelpers::StormReflEquality<MemberType>::CompareAndCopy(src_member, dst_member);
       };
 
