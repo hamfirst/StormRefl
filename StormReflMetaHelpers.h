@@ -278,7 +278,8 @@ namespace StormReflMetaHelpers
       {
         auto & src_member = src_f.Get();
         auto & dst_member = dst_f.Get();
-        StormReflCopy(dst_member, src_member);
+
+        StormReflEquality<C>::Copy(src_member, dst_member);
       };
 
       StormReflVisitEach(src, dst, copier);
