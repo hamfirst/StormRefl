@@ -218,9 +218,9 @@ namespace StormReflMetaHelpers
   template <typename T>
   struct StormReflElementwiseMover
   {
-    void operator()(T & a, T & b)
+    void operator()(T & dst, T & src)
     {
-      a = std::move(b);
+      dst = std::move(src);
     }
   };
 
@@ -249,6 +249,12 @@ namespace StormReflMetaHelpers
     {
       StormReflElementwiseCopier<C> copier;
       copier(dst, src);
+    }
+
+    static void Move(C && src, C & dst)
+    {
+      StormReflElementwiseMover<C> mover;
+      mover(dst, src);
     }
 
     static bool Compare(const C & a, const C & b)
@@ -285,6 +291,21 @@ namespace StormReflMetaHelpers
       };
 
       StormReflVisitEach(src, dst, copier);
+    }
+
+    static void Move(C && src, C & dst)
+    {
+      auto mover = [](auto & src_f, auto & dst_f)
+      {
+        auto & src_member = src_f.Get();
+        auto & dst_member = dst_f.Get();
+
+        using MemberType = typename std::template remove_reference_t<decltype(dst_member)>;
+
+        StormReflEquality<MemberType>::Move(std::move(src_member), dst_member);
+      };
+
+      StormReflVisitEach(src, dst, mover);
     }
 
     static bool Compare(const C & a, const C & b)
