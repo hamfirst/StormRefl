@@ -53,7 +53,7 @@ struct StormReflJson<std::vector<T>, void>
     std::size_t size = t.size();
     for (std::size_t index = 0; index < size; index++)
     {
-      StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
+      StormReflJsonHelpers::StormReflEncodeIndent(indent + 1, sb);
       StormReflJson<T>::EncodePretty(t[index], sb, indent + 1);
 
       if (index < size - 1)
@@ -66,6 +66,7 @@ struct StormReflJson<std::vector<T>, void>
       }
     }
 
+    StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += " ]";
   }
 
