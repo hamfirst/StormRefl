@@ -31,6 +31,13 @@ void StormReflVisitEach(C1 & c1, C2 & c2, Visitor && v)
   itr(c1, c2, v);
 }
 
+template<class C1, class C2, class C3, class Visitor>
+void StormReflVisitEach(C1 & c1, C2 & c2, C3 & c3, Visitor && v)
+{
+  StormReflMetaHelpers::StormReflFieldIterator<C1, Visitor, StormReflGetFieldCount<C1>()> itr;
+  itr(c1, c2, c3, v);
+}
+
 template<class C, class Visitor>
 void StormReflVisitField(C & c, Visitor && v, Hash field_name_hash)
 {

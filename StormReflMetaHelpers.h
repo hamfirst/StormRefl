@@ -54,12 +54,22 @@ namespace StormReflMetaHelpers
     }
 
     template <class C2>
-    void operator()(C& c1, C2 & c2, Visitor & v)
+    void operator()(C & c1, C2 & c2, Visitor & v)
     {
       auto f1 = typename StormReflTypeInfo<std::decay_t<C>>::template field_data<StormReflTypeInfo<std::decay_t<C>>::fields_n - I, C>(c1);
       auto f2 = typename StormReflTypeInfo<std::decay_t<C2>>::template field_data<StormReflTypeInfo<std::decay_t<C2>>::fields_n - I, C2>(c2);
       v(f1, f2);
       StormReflFieldIterator <C, Visitor, I - 1>() (c1, c2, v);
+    }
+
+    template <class C2, class C3>
+    void operator()(C & c1, C2 & c2, C3 & c3, Visitor & v)
+    {
+      auto f1 = typename StormReflTypeInfo<std::decay_t<C>>::template field_data<StormReflTypeInfo<std::decay_t<C>>::fields_n - I, C>(c1);
+      auto f2 = typename StormReflTypeInfo<std::decay_t<C2>>::template field_data<StormReflTypeInfo<std::decay_t<C2>>::fields_n - I, C2>(c2);
+      auto f3 = typename StormReflTypeInfo<std::decay_t<C3>>::template field_data<StormReflTypeInfo<std::decay_t<C3>>::fields_n - I, C3>(c3);
+      v(f1, f2, f3);
+      StormReflFieldIterator <C, Visitor, I - 1>() (c1, c2, c3, v);
     }
   };
 
@@ -78,6 +88,12 @@ namespace StormReflMetaHelpers
 
     template <class C2>
     void operator()(C& c1, C2 & c2, Visitor & v)
+    {
+
+    }
+
+    template <class C2, class C3>
+    void operator()(C & c1, C2 & c2, C3 & c3, Visitor & v)
     {
 
     }
