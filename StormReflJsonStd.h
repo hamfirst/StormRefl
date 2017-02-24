@@ -15,6 +15,14 @@ std::string StormReflEncodeJson(const T & t)
   return sb;
 }
 
+template <class T, class Meta>
+std::string StormReflEncodeJsonWithMetaData(const T & t, const Meta & meta)
+{
+  std::string sb;
+  StormReflEncodeJsonWithMetaData(t, meta, sb);
+  return sb;
+}
+
 template <class T>
 std::string StormReflEncodePrettyJson(const T & t)
 {
@@ -72,6 +80,7 @@ struct StormReflJson<std::vector<T>, void>
 
   static bool Parse(std::vector<T> & t, const char * str, const char *& result)
   {
+    StormReflJsonAdvanceWhiteSpace(str);
     t.clear();
     if (*str != '[')
     {
@@ -491,7 +500,7 @@ namespace StormReflJsonHelpers
       using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<ElemIndex>(t))>>;
       StormReflJson<elem_type>::Encode(std::get<ElemIndex>(t), sb);
 
-      if (N > 0)
+      if (N > 1)
       {
         sb += ',';
       }
@@ -507,7 +516,7 @@ namespace StormReflJsonHelpers
         return false;
       }
 
-      if (N > 0)
+      if (N > 1)
       {
         StormReflJsonAdvanceWhiteSpace(str);
         if (*str != ',')
