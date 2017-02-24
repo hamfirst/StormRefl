@@ -65,6 +65,12 @@ void StormReflCopy(C & dst, const C & src)
 }
 
 template <class C>
+void StormReflMove(C & dst, C && src)
+{
+  StormReflMetaHelpers::StormReflEquality<C>::Move(std::move(src), dst);
+}
+
+template <class C>
 bool StormReflCompareAndCopy(C & dst, const C & src)
 {
   return StormReflMetaHelpers::StormReflEquality<C>::CompareAndCopy(src, dst);

@@ -228,6 +228,7 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
       case 'n':
       case 'r':
       case 't':
+        str++;
         break;
       case 'u':
         {
@@ -1254,6 +1255,31 @@ template <class T, class StringBuilder>
 void StormReflEncodePrettyJson(const T & t, StringBuilder & sb)
 {
   StormReflJson<T>::EncodePretty(t, sb, 0);
+}
+
+template <class T, class Meta, class StringBuilder>
+void StormReflEncodeJsonWithMetaData(const T & t, const Meta & meta, StringBuilder & sb)
+{
+  static_assert(StormReflCheckReflectable<T>::value, "Can only append meta data to reflectable objects");
+
+  sb += "{\"__meta\":";
+  StormReflEncodeJson(meta, sb);
+
+  auto field_iterator = [&](auto f)
+  {      
+    sb += ',';
+    sb += '\"';
+    sb += f.GetName();
+    sb += "\":";
+
+    using member_type = typename decltype(f)::member_type;
+
+    StormReflJson<member_type>::Encode(f.Get(), sb);
+  };
+
+  StormReflVisitEach(t, field_iterator);
+  sb += '}';
+
 }
 
 template <class T>
