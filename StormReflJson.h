@@ -499,6 +499,23 @@ struct StormReflJson<T[i], void>
     sb += ']';
   }
 
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += '[';
+
+    for (int index = 0; index < i; index++)
+    {
+      StormReflJson<T>::SerializeDefault(sb);
+      if (index != i - 1)
+      {
+        sb += ',';
+      }
+    }
+
+    sb += ']';
+  }
+
   static bool Parse(T(&t)[i], const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -568,6 +585,12 @@ struct StormReflJson<char[i], void>
   {
     StormReflJsonEncodeString(str, sb);
   }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "\"\"";
+  }
 };
 
 template <>
@@ -583,6 +606,12 @@ struct StormReflJson<char *, void>
   static void EncodePretty(const char * str, StringBuilder & sb, int indent)
   {
     StormReflJsonEncodeString(str, sb);
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "\"\"";
   }
 };
 
@@ -641,6 +670,12 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
     StormReflVisitEach(t, field_iterator);
     StormReflJsonHelpers::StormReflEncodeIndent(indent, sb);
     sb += '}';
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "{}";
   }
 
   template <class StringBuilder>
@@ -738,6 +773,12 @@ struct StormReflJson<T, typename std::enable_if<std::is_enum<T>::value>::type>
   static void EncodePretty(const T & t, StringBuilder & sb, int indent)
   {
     Encode(t, sb);
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "\"\"";
   }
 
   static bool Parse(T & t, const char * str, const char *& result)
@@ -908,6 +949,12 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     Encode(t, sb);
   }
 
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "0";
+  }
+
   static bool Parse(T & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -1038,6 +1085,12 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   static void EncodePretty(const T & t, StringBuilder & sb, int indent)
   {
     Encode(t, sb);
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "0";
   }
 
   static bool Parse(T & t, const char * str, const char *& result)
@@ -1209,6 +1262,12 @@ struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value
 
     return true;
   }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "0";
+  }
 };
 
 template <>
@@ -1224,6 +1283,12 @@ struct StormReflJson<bool, void>
   static void EncodePretty(const bool & t, StringBuilder & sb, int indent)
   {
     Encode(t, sb);
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "false";
   }
 
   static bool Parse(bool & t, const char * str, const char *& result)
@@ -1255,6 +1320,18 @@ template <class T, class StringBuilder>
 void StormReflEncodePrettyJson(const T & t, StringBuilder & sb)
 {
   StormReflJson<T>::EncodePretty(t, sb, 0);
+}
+
+template <class T, class StringBuilder>
+void StormReflEncodePrettyJson(const T & t, StringBuilder & sb, int indent)
+{
+  StormReflJson<T>::EncodePretty(t, sb, indent);
+}
+
+template <class T, class StringBuilder>
+void StormReflSerializeDefaultJson(const T & t, StringBuilder & sb)
+{
+  StormReflJson<T>::SerializeDefault(sb);
 }
 
 template <class T, class Meta, class StringBuilder>

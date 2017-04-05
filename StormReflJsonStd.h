@@ -78,6 +78,12 @@ struct StormReflJson<std::vector<T>, void>
     sb += " ]";
   }
 
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "[]";
+  }
+
   static bool Parse(std::vector<T> & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -233,6 +239,12 @@ struct StormReflJson<std::map<K, T>, void>
     sb += '}';
   }
 
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "{}";
+  }
+
   static bool Parse(std::map<K, T> & t, const char * str, const char *& result)
   {
     while (true)
@@ -318,6 +330,12 @@ struct StormReflJson<std::string, void>
   static void EncodePretty(const std::string & t, StringBuilder & sb, int indent)
   {
     Encode(t, sb);
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "\"\"";
   }
 
   static bool Parse(std::string & t, const char * str, const char *& result)
@@ -447,6 +465,17 @@ struct StormReflJson<std::pair<First, Second>, void>
     sb += " ]";
   }
 
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "[";
+    StormReflJson<First>::SerializeDefault(sb);
+    sb += ",";
+    StormReflJson<Second>::SerializeDefault(sb);
+    sb += ']';
+  }
+
   static bool Parse(std::pair<First, Second> & t, const char * str, const char *& result)
   {
     StormReflJsonAdvanceWhiteSpace(str);
@@ -508,6 +537,20 @@ namespace StormReflJsonHelpers
       TupleArg<N - 1, Types...>::Encode(t, sb);
     }
 
+    template <class StringBuilder>
+    static void SerializeDefault(StringBuilder & sb)
+    {
+      using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<ElemIndex>(t))>>;
+      StormReflJson<elem_type>::SerializeDefault(sb);
+
+      if (N > 1)
+      {
+        sb += ',';
+      }
+
+      TupleArg<N - 1, Types...>::SerializeDefault(sb);
+    }
+
     static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
     {
       using elem_type = std::remove_const_t<std::remove_reference_t<decltype(std::get<ElemIndex>(t))>>;
@@ -564,6 +607,14 @@ struct StormReflJson<std::tuple<Types...>, void>
   {
     sb += "[ ";
     StormReflJsonHelpers::TupleArg<sizeof...(Types), Types...>::Encode(t, sb);
+    sb += " ]";
+  }
+
+  template <class StringBuilder>
+  static void SerializeDefault(StringBuilder & sb)
+  {
+    sb += "[";
+    StormReflJsonHelpers::TupleArg<sizeof...(Types), Types...>::SerializeDefault(sb);
     sb += " ]";
   }
 

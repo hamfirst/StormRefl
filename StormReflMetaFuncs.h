@@ -45,6 +45,13 @@ void StormReflVisitField(C & c, Visitor && v, Hash field_name_hash)
   StormReflVisitEach(c, visitor);
 }
 
+template<class C1, class C2, class Visitor>
+void StormReflVisitField(C1 & c1, C2 & c2, Visitor && v, Hash field_name_hash)
+{
+  auto visitor = [&](auto f1, auto f2) { if (f1.GetFieldNameHash() == field_name_hash) v(f1, f2); };
+  StormReflVisitEach(c1, c2, visitor);
+}
+
 template<class C, class Visitor>
 void StormReflVisitField(C & c, Visitor && v, czstr field_name)
 {
