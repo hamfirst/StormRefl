@@ -444,6 +444,40 @@ namespace StormReflMetaHelpers
     return has_annotation;
   }
 
+  template <typename C, int MemberIndex>
+  const char * StormReflGetAnnotationValue(const char * annotation)
+  {
+    const char * value = nullptr;
+    int annotation_length = 0;
+    for (const char * ptr = annotation; *ptr != 0; ++ptr, annotation_length++);
+
+    auto visitor = [&](auto a)
+    {
+      auto check_annotation = a.GetAnnotation();
+      auto ptr = annotation;
+
+      for (std::size_t index = (std::size_t)annotation_length; index > 0; --index, ++ptr, ++check_annotation)
+      {
+        if (*ptr != *check_annotation)
+        {
+          return;
+        }
+      }
+
+      if (*check_annotation != ':' || *(check_annotation + 1) != ' ')
+      {
+        return;
+      }
+
+      value = check_annotation + 2;
+    };
+
+    StormReflAnnotationIterator<C, decltype(visitor), MemberIndex, StormReflGetAnnotationCount<C, MemberIndex>()> itr;
+    itr(visitor);
+
+    return value;
+  }
+
   template <typename T, typename Visitor>
   void StormReflVisitFieldsWithAnnotation(const char * annotation, Visitor & v)
   {

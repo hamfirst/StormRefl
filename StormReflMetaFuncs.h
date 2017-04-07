@@ -170,6 +170,12 @@ bool StormReflHasAnnotation(const char * annotation)
   return StormReflMetaHelpers::StormReflHasAnnotation<C, MemberIndex>(annotation);
 }
 
+template <class C, int MemberIndex>
+const char * StormReflGetAnnotationValue(const char * annotation)
+{
+  return StormReflMetaHelpers::StormReflGetAnnotationValue<C, MemberIndex>(annotation);
+}
+
 template <typename C, typename Visitor>
 void StormReflVisitFieldsWithAnnotation(const char * annotation, Visitor & visitor)
 {
