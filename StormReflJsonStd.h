@@ -526,7 +526,7 @@ namespace StormReflJsonHelpers
     template <class StringBuilder>
     static void Encode(const std::tuple<Types...> & t, StringBuilder & sb)
     {
-      using elem_type = std::decay_t<std::tuple_element_t<ElemIndex, std::tuple<Types...>>>;
+      using elem_type = std::decay_t<typename std::tuple_element<ElemIndex, std::tuple<Types...>>::type>;
       StormReflJson<elem_type>::Encode(std::get<ElemIndex>(t), sb);
 
       if (N > 1)
@@ -540,7 +540,7 @@ namespace StormReflJsonHelpers
     template <class StringBuilder>
     static void SerializeDefault(StringBuilder & sb)
     {
-      using elem_type = std::decay_t<std::tuple_element_t<ElemIndex, std::tuple<Types...>>>;
+      using elem_type = std::decay_t<typename std::tuple_element<ElemIndex, std::tuple<Types...>>::type>;
       StormReflJson<elem_type>::SerializeDefault(sb);
 
       if (N > 1)
@@ -553,7 +553,7 @@ namespace StormReflJsonHelpers
 
     static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
     {
-      using elem_type = std::decay_t<std::tuple_element_t<ElemIndex, std::tuple<Types...>>>;
+      using elem_type = std::decay_t<typename std::tuple_element<ElemIndex, std::tuple<Types...>>::type>;
       if (StormReflJson<elem_type>::Parse(std::template get<ElemIndex>(t), str, str) == false)
       {
         return false;
