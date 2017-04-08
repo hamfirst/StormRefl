@@ -2,6 +2,7 @@
 
 #include <cwchar>
 #include <climits>
+#include <cstdlib>
 
 #include "StormReflMetaFuncs.h"
 #include "StormReflMetaEnum.h"
