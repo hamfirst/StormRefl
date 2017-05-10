@@ -37,3 +37,14 @@ bool StormReflGetEnumFromHash(EnumType & out, uint32_t enum_name_hash)
   itr(visitor, enum_name_hash);
   return found;
 }
+
+template <class EnumType>
+struct StormReflVisitEnumValues
+{
+  template <class Visitor>
+  void VisitEach(Visitor && visitor)
+  {
+    StormReflMetaHelpers::StormReflEnumIterator<EnumType, decltype(visitor), StormReflGetEnumElemCount<EnumType>()> itr;
+    itr(visitor);
+  }
+};

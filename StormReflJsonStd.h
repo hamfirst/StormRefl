@@ -84,7 +84,7 @@ struct StormReflJson<std::vector<T>, void>
     sb += "[]";
   }
 
-  static bool Parse(std::vector<T> & t, const char * str, const char *& result)
+  static bool Parse(std::vector<T> & t, const char * str, const char *& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     t.clear();
@@ -106,7 +106,7 @@ struct StormReflJson<std::vector<T>, void>
       t.emplace_back();
       auto & elem = t.back();
 
-      if (StormReflJson<T>::Parse(elem, str, str) == false)
+      if (StormReflJson<T>::Parse(elem, str, str, additive) == false)
       {
         if (StormReflJsonParseOverValue(str, str) == false)
         {
@@ -245,8 +245,13 @@ struct StormReflJson<std::map<K, T>, void>
     sb += "{}";
   }
 
-  static bool Parse(std::map<K, T> & t, const char * str, const char *& result)
+  static bool Parse(std::map<K, T> & t, const char * str, const char *& result, bool additive)
   {
+    if (additive == false)
+    {
+      t.clear();
+    }
+
     while (true)
     {
       StormReflJsonAdvanceWhiteSpace(str);
@@ -338,7 +343,7 @@ struct StormReflJson<std::string, void>
     sb += "\"\"";
   }
 
-  static bool Parse(std::string & t, const char * str, const char *& result)
+  static bool Parse(std::string & t, const char * str, const char *& result, bool additive)
   {
     t.clear();
     StormReflJsonAdvanceWhiteSpace(str);
@@ -476,7 +481,7 @@ struct StormReflJson<std::pair<First, Second>, void>
     sb += ']';
   }
 
-  static bool Parse(std::pair<First, Second> & t, const char * str, const char *& result)
+  static bool Parse(std::pair<First, Second> & t, const char * str, const char *& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '[')
@@ -486,7 +491,7 @@ struct StormReflJson<std::pair<First, Second>, void>
 
     str++;
 
-    if (StormReflJson<First>::Parse(t.first, str, str) == false)
+    if (StormReflJson<First>::Parse(t.first, str, str, additive) == false)
     {
       return false;
     }
@@ -499,7 +504,7 @@ struct StormReflJson<std::pair<First, Second>, void>
 
     str++;
 
-    if (StormReflParseJson(t.second, str, str) == false)
+    if (StormReflParseJson(t.second, str, str, additive) == false)
     {
       return false;
     }
@@ -551,10 +556,10 @@ namespace StormReflJsonHelpers
       TupleArg<N - 1, Types...>::SerializeDefault(sb);
     }
 
-    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
     {
       using elem_type = std::decay_t<typename std::tuple_element<ElemIndex, std::tuple<Types...>>::type>;
-      if (StormReflJson<elem_type>::Parse(std::template get<ElemIndex>(t), str, str) == false)
+      if (StormReflJson<elem_type>::Parse(std::template get<ElemIndex>(t), str, str, additive) == false)
       {
         return false;
       }
@@ -570,7 +575,7 @@ namespace StormReflJsonHelpers
         str++;
       }
 
-      return TupleArg<N - 1, Types...>::Parse(t, str, result);
+      return TupleArg<N - 1, Types...>::Parse(t, str, result, additive);
     }
   };
 
@@ -583,7 +588,7 @@ namespace StormReflJsonHelpers
 
     }
 
-    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
     {
       result = str;
       return true;
@@ -618,7 +623,7 @@ struct StormReflJson<std::tuple<Types...>, void>
     sb += " ]";
   }
 
-  static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result)
+  static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '[')
@@ -628,7 +633,7 @@ struct StormReflJson<std::tuple<Types...>, void>
 
     str++;
 
-    if (StormReflJsonHelpers::template TupleArg<sizeof...(Types), Types...>::Parse(t, str, str) == false)
+    if (StormReflJsonHelpers::template TupleArg<sizeof...(Types), Types...>::Parse(t, str, str, additive) == false)
     {
       return false;
     }
