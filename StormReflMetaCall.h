@@ -32,7 +32,6 @@ constexpr bool StormReflIsParamOfType()
   return std::is_same<typename StormReflGetParamType<C, FuncIndex, ParamIndex>::type, ParamType>::value;
 }
 
-
 template<class C, class Visitor>
 void StormReflVisitFuncs(C & c, Visitor & v)
 {

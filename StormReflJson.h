@@ -4,12 +4,20 @@
 #include <climits>
 #include <cstdlib>
 
+#include <vector>
+
 #include "StormReflMetaFuncs.h"
 #include "StormReflMetaEnum.h"
 
 #pragma warning(disable:4996)
 
 inline bool StormReflJsonParseOverValue(const char * str, const char *& result);
+
+template <class T>
+bool StormReflParseJson(T & t, const char * str, const char *& result, bool additive = false);
+
+template <class T>
+bool StormReflParseJson(T & t, const char * str, bool additive = false);
 
 namespace StormReflJsonHelpers
 {
@@ -138,7 +146,7 @@ inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, cons
             hash = crc32additive(hash, utf8[index]);
           }
         }
-      break;
+        break;
       }
     }
     else if (*str == 0 || *str == '\n' || *str == '\r' || *str == '\b' || *str == '\t')
@@ -1396,13 +1404,13 @@ void StormReflEncodeJsonWithMetaData(const T & t, const Meta & meta, StringBuild
 }
 
 template <class T>
-bool StormReflParseJson(T & t, const char * str, const char *& result, bool additive = false)
+bool StormReflParseJson(T & t, const char * str, const char *& result, bool additive)
 {
   return StormReflJson<T>::Parse(t, str, result, additive);
 }
 
 template <class T>
-bool StormReflParseJson(T & t, const char * str, bool additive = false)
+bool StormReflParseJson(T & t, const char * str, bool additive)
 {
   return StormReflJson<T>::Parse(t, str, str, additive);
 }

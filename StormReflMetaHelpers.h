@@ -511,5 +511,35 @@ namespace StormReflMetaHelpers
       return hash;
     }
   };
+
+  template<typename T>
+  struct StormReflHasDefault
+  {
+    using MetaType = StormReflTypeInfo<T>;
+
+    template<typename U, T &()> struct SFINAE {};
+    template<typename U> static char Test(SFINAE<U, &U::GetDefault>*);
+    template<typename U> static int Test(...);
+    static const bool value = sizeof(Test<MetaType>(0)) == sizeof(char);
+  };
+
+  template <typename T, bool HasDefault>
+  struct StormReflGetDefault
+  {
+    static T * Process()
+    {
+      return nullptr;
+    }
+  };
+
+  template <typename T>
+  struct StormReflGetDefault<T, true>
+  {
+    static T * Process()
+    {
+      auto & default_data = StormReflTypeInfo<T>::GetDefault();
+      return &default_data;
+    }
+  };
 }
 

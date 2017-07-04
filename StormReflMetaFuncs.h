@@ -115,6 +115,12 @@ constexpr int StormReflGetMemberFieldIndex(M C::* member_ptr)
 }
 
 template <typename T>
+T * StormReflGetDefault()
+{
+  return StormReflMetaHelpers::StormReflGetDefault<T, StormReflMetaHelpers::StormReflHasDefault<T>::value>::Process();
+}
+
+template <typename T>
 bool StormReflElementwiseCompare(const T & a, const T & b)
 {
   StormReflMetaHelpers::StormReflElementwiseComparer<T> comparer;
