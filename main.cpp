@@ -1,3 +1,5 @@
+
+
 #include "clang/Driver/Options.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTContext.h"
@@ -424,8 +426,9 @@ private:
 class StormReflFrontendAction: public ASTFrontendAction
 {
 public:
-  virtual bool BeginSourceFileAction(CompilerInstance & compiler_instance, StringRef file) override
+  virtual bool BeginSourceFileAction(CompilerInstance & compiler_instance) override
   {
+    auto file = getCurrentFile();
     m_SourceFile = file;
 
     std::unique_ptr<FindIncludes> find_includes_callback = std::make_unique<FindIncludes>(compiler_instance.getSourceManager(), std::string(file), m_Includes);
