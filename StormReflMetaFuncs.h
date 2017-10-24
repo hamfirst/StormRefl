@@ -17,6 +17,17 @@ constexpr int StormReflGetFieldCount()
   return StormReflTypeInfo<std::decay_t<C>>::fields_n;
 }
 
+template <class C>
+struct StormReflVisitStatic
+{
+  template <typename Visitor>
+  static void VisitEach(Visitor && v)
+  {
+    StormReflMetaHelpers::StormReflFieldIterator<C, Visitor, StormReflGetFieldCount<C>()> itr;
+    itr(v);
+  }
+};
+
 template<class C, class Visitor>
 void StormReflVisitEach(C & c, Visitor && v)
 {

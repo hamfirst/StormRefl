@@ -8,16 +8,18 @@ namespace StormReflMetaHelpers
     void operator()(Visitor & v)
     {
       using info_type = StormReflEnumInfo<std::decay_t<C>>;
-      auto f = info_type::template elems<info_type::elems_n - I>();
+      using elem_type = typename info_type::template elems<info_type::elems_n - I>;
+      auto f = elem_type();
       v(f);
-      StormReflEnumIterator<C, Visitor, I - 1> itr; itr(v);
+      StormReflEnumIterator<C, Visitor, I - 1> itr; 
+      itr(v);
     }
   };
 
   template <class C, class Visitor>
   struct StormReflEnumIterator<C, Visitor, 0>
   {
-    void operator()(C& c, Visitor & v)
+    void operator()(Visitor & v)
     {
 
     }
