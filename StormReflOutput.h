@@ -13,6 +13,7 @@ struct ReflectedFunc
 {
   std::string m_Name;
   std::string m_ReturnType;
+  std::string m_FullSignature;
 
   std::vector<ReflectedParam> m_Params;
 };

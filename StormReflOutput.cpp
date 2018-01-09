@@ -256,6 +256,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "template <>\n");
       fprintf(fp, "struct StormReflFuncInfo<%s>::func_data_static<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
+      fprintf(fp, "  using func_ptr_type = %s;\n", func.m_FullSignature.c_str());
       fprintf(fp, "  using return_type = %s;\n", func.m_ReturnType.c_str());
       fprintf(fp, "  static constexpr int params_n = %d;\n", func.m_Params.size());
       fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", func.m_Name.c_str());
@@ -263,7 +264,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  static constexpr unsigned GetFunctionNameHash() { return 0x%08X; }\n", crc32(func.m_Name));
       fprintf(fp, "  static constexpr unsigned GetReturnTypeNameHash() { return 0x%08X; }\n", crc32(func.m_ReturnType));
       fprintf(fp, "  static constexpr auto GetFunctionIndex() { return %d%s; }\n", index, base_str.c_str());
-      fprintf(fp, "  static constexpr auto GetFunctionPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), func.m_Name.c_str());
+      fprintf(fp, "  static constexpr func_ptr_type GetFunctionPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), func.m_Name.c_str());
       fprintf(fp, "  template <int i>\n");
       fprintf(fp, "  struct param_info { };\n");
       fprintf(fp, "};\n\n");

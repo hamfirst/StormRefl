@@ -266,6 +266,9 @@ public:
           }
 
           ReflectedFunc func = { method->getName() };
+          auto func_qual_type = m_ASTContext.getMemberPointerType(method->getType(), method->getParent()->getTypeForDecl());
+
+          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext);
           func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext);
 
           for (auto param : method->parameters())
