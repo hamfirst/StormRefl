@@ -42,7 +42,7 @@ template <class EnumType>
 struct StormReflVisitEnumValues
 {
   template <class Visitor>
-  void VisitEach(Visitor && visitor)
+  static void VisitEach(Visitor && visitor)
   {
     StormReflMetaHelpers::StormReflEnumIterator<EnumType, decltype(visitor), StormReflGetEnumElemCount<EnumType>()> itr;
     itr(visitor);

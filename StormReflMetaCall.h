@@ -32,15 +32,26 @@ constexpr bool StormReflIsParamOfType()
   return std::is_same<typename StormReflGetParamType<C, FuncIndex, ParamIndex>::type, ParamType>::value;
 }
 
-template<class C, class Visitor>
-void StormReflVisitFuncs(C & c, Visitor & v)
+template <class C, class Visitor>
+void StormReflVisitFuncs(C & c, Visitor && v)
 {
   StormReflMetaHelpers::StormReflFunctionIterator<C, Visitor, StormReflGetFunctionCount<C>()> itr;
   itr(v);
 }
 
+template <class C>
+struct StormReflFuncVisitor
+{
+  template <class Visitor>
+  static void VisitFuncs(Visitor && v)
+  {
+    StormReflMetaHelpers::StormReflFunctionIterator<C, Visitor, StormReflGetFunctionCount<C>()> itr;
+    itr(v);
+  }
+};
+
 template<class C, class Visitor>
-void StormReflVisitFuncByIndex(C & c, Visitor & v, int func_index)
+void StormReflVisitFuncByIndex(C & c, Visitor && v, int func_index)
 {
   auto visitor = [&](auto f) { if (f.GetFunctionIndex() == func_index) v(f); };
   StormReflVisitFuncs(c, visitor);

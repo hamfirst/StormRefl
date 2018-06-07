@@ -1,3 +1,5 @@
+
+
 #include "clang/Driver/Options.h"
 #include "clang/AST/AST.h"
 #include "clang/AST/ASTContext.h"
@@ -264,6 +266,9 @@ public:
           }
 
           ReflectedFunc func = { method->getName() };
+          auto func_qual_type = m_ASTContext.getMemberPointerType(method->getType(), method->getParent()->getTypeForDecl());
+
+          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext);
           func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext);
 
           for (auto param : method->parameters())
@@ -424,8 +429,9 @@ private:
 class StormReflFrontendAction: public ASTFrontendAction
 {
 public:
-  virtual bool BeginSourceFileAction(CompilerInstance & compiler_instance, StringRef file) override
+  virtual bool BeginSourceFileAction(CompilerInstance & compiler_instance) override
   {
+    auto file = getCurrentFile();
     m_SourceFile = file;
 
     std::unique_ptr<FindIncludes> find_includes_callback = std::make_unique<FindIncludes>(compiler_instance.getSourceManager(), std::string(file), m_Includes);
