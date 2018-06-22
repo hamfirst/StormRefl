@@ -1,17 +1,17 @@
 
 
-#include "clang/Driver/Options.h"
-#include "clang/AST/AST.h"
-#include "clang/AST/ASTContext.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Lex/Preprocessor.h"
-#include "clang/Frontend/ASTConsumers.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Tooling.h"
-#include "clang/Tooling/Core/QualTypeNames.h"
+#include <clang/Driver/Options.h>
+#include <clang/AST/AST.h>
+#include <clang/AST/ASTContext.h>
+#include <clang/AST/ASTConsumer.h>
+#include <clang/AST/QualTypeNames.h>
+#include <clang/AST/RecursiveASTVisitor.h>
+#include <clang/Lex/Preprocessor.h>
+#include <clang/Frontend/ASTConsumers.h>
+#include <clang/Frontend/FrontendActions.h>
+#include <clang/Frontend/CompilerInstance.h>
+#include <clang/Tooling/CommonOptionsParser.h>
+#include <clang/Tooling/Tooling.h>
 
 #include "StormReflOutput.h"
 
@@ -67,6 +67,10 @@ public:
 
   void ProcessDataClass(CXXRecordDecl * decl)
   {
+    clang::LangOptions lang_opts;
+    lang_opts.CPlusPlus = true;
+    clang::PrintingPolicy printing_policy(lang_opts);
+
     auto decl_name = std::string(decl->getName());
 
     bool is_reflectable = false;
@@ -132,8 +136,8 @@ public:
 
           auto qual_type = field->getType();
           auto qual_cannon_type = field->getType().getCanonicalType();
-          auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext);
-          auto cannon_str = clang::TypeName::getFullyQualifiedName(qual_cannon_type, m_ASTContext);
+          auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, printing_policy);
+          auto cannon_str = clang::TypeName::getFullyQualifiedName(qual_cannon_type, m_ASTContext, printing_policy);
           auto name_str = std::string(field->getName());
 
           bool ignore_field = false;
@@ -182,6 +186,10 @@ public:
 
   void ProcessFunctionClass(CXXRecordDecl * decl)
   {
+    clang::LangOptions lang_opts;
+    lang_opts.CPlusPlus = true;
+    clang::PrintingPolicy printing_policy(lang_opts);
+
     auto decl_name = std::string(decl->getName());
 
     bool is_functional = false;
@@ -268,12 +276,12 @@ public:
           ReflectedFunc func = { method->getName() };
           auto func_qual_type = m_ASTContext.getMemberPointerType(method->getType(), method->getParent()->getTypeForDecl());
 
-          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext);
-          func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext);
+          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext, printing_policy);
+          func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext, printing_policy);
 
           for (auto param : method->parameters())
           {
-            func.m_Params.emplace_back(ReflectedParam{ param->getName(), clang::TypeName::getFullyQualifiedName(param->getType(), m_ASTContext) });
+            func.m_Params.emplace_back(ReflectedParam{ param->getName(), clang::TypeName::getFullyQualifiedName(param->getType(), m_ASTContext, printing_policy) });
           }
 
           class_data.m_Funcs.emplace_back(std::move(func));
@@ -286,6 +294,10 @@ public:
 
   bool VisitEnumDecl(EnumDecl * decl)
   {
+    clang::LangOptions lang_opts;
+    lang_opts.CPlusPlus = true;
+    clang::PrintingPolicy printing_policy(lang_opts);
+
     if (decl->isComplete() == false)
     {
       return true;
@@ -327,7 +339,7 @@ public:
     }
 
     auto qual_type = decl->getTypeForDecl()->getLocallyUnqualifiedSingleStepDesugaredType();
-    auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext);
+    auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, printing_policy);
 
     ReflectedEnum data = { type_str, decl->isScopedUsingClassTag() };
 
@@ -401,7 +413,8 @@ public:
     const FileEntry *file,
     StringRef search_path,
     StringRef relative_path,
-    const clang::Module *imported) override
+    const clang::Module *imported,
+    clang::SrcMgr::CharacteristicKind file_type) override
   {
     FullSourceLoc full_souce_loc(hash_loc, m_SourceManager);
 

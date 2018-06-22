@@ -30,7 +30,7 @@ bool StormReflCallParseJson(C & c, const char * str, const char *& result, Provi
   str++;
 
   int func_index = 0;
-  if (StormReflJson<int>::Parse(func_index, str, str) == false)
+  if (StormReflJson<int>::Parse(func_index, str, str, false) == false)
   {
     return false;
   }

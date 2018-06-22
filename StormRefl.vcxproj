@@ -158,8 +158,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External;($SolutionDir)\StormRefl</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;($SolutionDir)\StormRefl</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -178,8 +178,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,8 +200,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -225,8 +225,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -250,8 +250,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -274,8 +274,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -299,8 +299,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -324,8 +324,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\External</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
