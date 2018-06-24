@@ -21,6 +21,8 @@ using namespace clang::tooling;
 using namespace llvm;
 
 
+clang::PrintingPolicy * g_PrintingPolicy = nullptr;
+
 
 class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
 {
@@ -67,10 +69,6 @@ public:
 
   void ProcessDataClass(CXXRecordDecl * decl)
   {
-    clang::LangOptions lang_opts;
-    lang_opts.CPlusPlus = true;
-    clang::PrintingPolicy printing_policy(lang_opts);
-
     auto decl_name = std::string(decl->getName());
 
     bool is_reflectable = false;
@@ -136,8 +134,8 @@ public:
 
           auto qual_type = field->getType();
           auto qual_cannon_type = field->getType().getCanonicalType();
-          auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, printing_policy);
-          auto cannon_str = clang::TypeName::getFullyQualifiedName(qual_cannon_type, m_ASTContext, printing_policy);
+          auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, *g_PrintingPolicy);
+          auto cannon_str = clang::TypeName::getFullyQualifiedName(qual_cannon_type, m_ASTContext, *g_PrintingPolicy);
           auto name_str = std::string(field->getName());
 
           bool ignore_field = false;
@@ -186,9 +184,6 @@ public:
 
   void ProcessFunctionClass(CXXRecordDecl * decl)
   {
-    clang::LangOptions lang_opts;
-    lang_opts.CPlusPlus = true;
-    clang::PrintingPolicy printing_policy(lang_opts);
 
     auto decl_name = std::string(decl->getName());
 
@@ -276,12 +271,12 @@ public:
           ReflectedFunc func = { method->getName() };
           auto func_qual_type = m_ASTContext.getMemberPointerType(method->getType(), method->getParent()->getTypeForDecl());
 
-          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext, printing_policy);
-          func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext, printing_policy);
+          func.m_FullSignature = clang::TypeName::getFullyQualifiedName(func_qual_type, m_ASTContext, *g_PrintingPolicy);
+          func.m_ReturnType = clang::TypeName::getFullyQualifiedName(method->getReturnType(), m_ASTContext, *g_PrintingPolicy);
 
           for (auto param : method->parameters())
           {
-            func.m_Params.emplace_back(ReflectedParam{ param->getName(), clang::TypeName::getFullyQualifiedName(param->getType(), m_ASTContext, printing_policy) });
+            func.m_Params.emplace_back(ReflectedParam{ param->getName(), clang::TypeName::getFullyQualifiedName(param->getType(), m_ASTContext, *g_PrintingPolicy) });
           }
 
           class_data.m_Funcs.emplace_back(std::move(func));
@@ -294,10 +289,6 @@ public:
 
   bool VisitEnumDecl(EnumDecl * decl)
   {
-    clang::LangOptions lang_opts;
-    lang_opts.CPlusPlus = true;
-    clang::PrintingPolicy printing_policy(lang_opts);
-
     if (decl->isComplete() == false)
     {
       return true;
@@ -339,7 +330,7 @@ public:
     }
 
     auto qual_type = decl->getTypeForDecl()->getLocallyUnqualifiedSingleStepDesugaredType();
-    auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, printing_policy);
+    auto type_str = clang::TypeName::getFullyQualifiedName(qual_type, m_ASTContext, *g_PrintingPolicy);
 
     ReflectedEnum data = { type_str, decl->isScopedUsingClassTag() };
 
@@ -494,6 +485,13 @@ private:
 
 int main(int argc, const char **argv) 
 {
+  clang::LangOptions lang_opts;
+  lang_opts.CPlusPlus = true;
+  clang::PrintingPolicy policy(lang_opts);
+  policy.adjustForCPlusPlus();
+
+  g_PrintingPolicy = &policy;
+
   CommonOptionsParser op(argc, argv, cl::OptionCategory("StormRefl"));
 
   ClangTool Tool(op.getCompilations(), op.getSourcePathList());
