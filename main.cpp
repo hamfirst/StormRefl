@@ -22,6 +22,7 @@ using namespace llvm;
 
 
 clang::PrintingPolicy * g_PrintingPolicy = nullptr;
+llvm::cl::opt<std::string> g_DependencyDir("depsdir", cl::desc("Intermediate directory for writing out the dependency list"));
 
 
 class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
@@ -391,8 +392,8 @@ private:
 class FindIncludes : public PPCallbacks
 {
 public:
-  FindIncludes(SourceManager & source_manager, const std::string & source_file, std::vector<std::string> & includes)
-    : m_SourceManager(source_manager), m_SourceFile(source_file), m_Includes(includes)
+  FindIncludes(SourceManager & source_manager, const std::string & source_file, std::vector<std::string> & includes, std::vector<std::string> & dependencies)
+    : m_SourceManager(source_manager), m_SourceFile(source_file), m_Includes(includes), m_Dependencies(dependencies)
   { }
 
   void InclusionDirective(
@@ -414,6 +415,15 @@ public:
       return;
     }
 
+    if (g_DependencyDir.length() > 0 && file != nullptr)
+    {
+      auto file_path = file->tryGetRealPathName();
+      if (file_path.size() > 0)
+      {
+        m_Dependencies.emplace_back(file_path);
+      }
+    }
+
     auto file_entry = m_SourceManager.getFileEntryForID(full_souce_loc.getFileID());
     if (m_SourceFile == file_entry->getName())
     {
@@ -428,6 +438,7 @@ private:
   SourceManager & m_SourceManager;
   std::string m_SourceFile;
   std::vector<std::string> & m_Includes;
+  std::vector<std::string> & m_Dependencies;
 };
 
 class StormReflFrontendAction: public ASTFrontendAction
@@ -438,7 +449,7 @@ public:
     auto file = getCurrentFile();
     m_SourceFile = file;
 
-    std::unique_ptr<FindIncludes> find_includes_callback = std::make_unique<FindIncludes>(compiler_instance.getSourceManager(), std::string(file), m_Includes);
+    std::unique_ptr<FindIncludes> find_includes_callback = std::make_unique<FindIncludes>(compiler_instance.getSourceManager(), std::string(file), m_Includes, m_Depenencies);
 
     auto & preprocessor = compiler_instance.getPreprocessor();
     preprocessor.addPPCallbacks(std::move(find_includes_callback));
@@ -464,7 +475,13 @@ public:
 
     OutputReflectedFile(m_SourceFile, m_ClassFuncs, m_ClassData, m_EnumData, m_Includes);
 
+    if (g_DependencyDir.length() > 0)
+    {
+      OutputDependencyFile(m_SourceFile, g_DependencyDir, m_Depenencies);
+    }
+
     m_Includes.clear();
+    m_Depenencies.clear();
     m_ClassData.clear();
     m_SourceFile.clear();
   }
@@ -478,10 +495,12 @@ private:
 
   std::string m_SourceFile;
   std::vector<std::string> m_Includes;
+  std::vector<std::string> m_Depenencies;
   std::vector<ReflectedDataClass> m_ClassData;
   std::vector<ReflectedFunctionalClass> m_ClassFuncs;
   std::vector<ReflectedEnum> m_EnumData;
 };
+
 
 int main(int argc, const char **argv) 
 {
@@ -493,6 +512,10 @@ int main(int argc, const char **argv)
   g_PrintingPolicy = &policy;
 
   CommonOptionsParser op(argc, argv, cl::OptionCategory("StormRefl"));
+  if (op.getSourcePathList().size() == 0)
+  {
+    return 0;
+  }
 
   ClangTool Tool(op.getCompilations(), op.getSourcePathList());
   int result = Tool.run(newFrontendActionFactory<StormReflFrontendAction>().get());

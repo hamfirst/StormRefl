@@ -180,6 +180,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)_WIN</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -277,6 +278,7 @@
       <AdditionalIncludeDirectories>C:\Dev\llvm\include;C:\Dev\llvm-build\include;C:\Dev\llvm\tools\clang\include;C:\Dev\llvm-build\tools\clang\include;$(SolutionDir)\External;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

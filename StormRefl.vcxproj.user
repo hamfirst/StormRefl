@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CoreOpt|Win32'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='FinalStatic|Win32'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='CoreOpt|x64'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='FinalStatic|x64'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>-depsdir $(TargetDir) -- -DSTORM_REFL_PARSE -D_CRT_SECURE_NO_WARNINGS -x c++ -I$(SolutionDir)External -I$(SolutionDir) "-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" -Wno-pragma-once-outside-header</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>

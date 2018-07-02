@@ -9,9 +9,12 @@
   </Target>
  
   <Target Name="MetaHeaders" 
-          Inputs="@(FilteredHeaders);..\Release\StormRefl.exe" 
-          Outputs="@(FilteredHeaders->'%(rootdir)%(directory)%(filename).meta%(extension)')" 
           BeforeTargets="ClCompile">
-    <ParseHeader ExeFile="..\Release\StormRefl.exe" HeaderFiles="@(FilteredHeaders)" IncludeDirs="$(SolutionDir)External;$(SolutionDir);C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" />
+    <ParseHeader 
+            ExeFile="$(SolutionDir)\Release\StormRefl.exe" 
+            HeaderFiles="@(FilteredHeaders)" 
+            DependencyDir="$(ProjectDir)$(IntDir)"
+            IncludeDirs="$(SolutionDir)External;$(SolutionDir);C:\Program Files (x86)\Windows Kits\10\Include\10.0.10240.0\ucrt" 
+    />
   </Target>
 </Project>

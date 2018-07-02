@@ -59,3 +59,5 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
                                                        const std::vector<ReflectedDataClass> & class_data, 
                                                        const std::vector<ReflectedEnum> & enum_data,
                                                        const std::vector<std::string> & headers);
+
+void OutputDependencyFile(const std::string & filename, const std::string & dependency_dir, std::vector<std::string> & dependencies);

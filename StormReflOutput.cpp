@@ -23,6 +23,22 @@ fs::path ConvertFileToMeta(const std::string & filename)
   return new_path;
 }
 
+fs::path ConvertFileToDeps(const std::string & filename, const std::string & dependency_dir)
+{
+  fs::path path(filename);
+  fs::path dir(dependency_dir);
+
+  auto stem = path.stem();
+  auto extension = path.extension();
+
+  auto new_path = dir;
+  new_path /= stem;
+  new_path += extension;
+  new_path += ".deps";
+
+  return new_path;
+}
+
 std::string EnsurePathForwardSlash(const fs::path & path)
 {
   std::string path_str = path.u8string();
@@ -306,4 +322,23 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   fprintf(fp, "}\n\n");
   fclose(fp);
 
+}
+
+void OutputDependencyFile(const std::string & filename, const std::string & dependency_dir, std::vector<std::string> & dependencies)
+{
+  auto cur_path = fs::canonical(fs::path(filename));
+  auto new_path = ConvertFileToDeps(filename, dependency_dir);
+  auto fp = _wfopen(new_path.c_str(), L"wt");
+
+  if (!fp)
+  {
+    return;
+  }
+
+  for (auto & elem : dependencies)
+  {
+    fprintf(fp, "%s\n", elem.c_str());
+  }
+
+  fclose(fp);
 }
