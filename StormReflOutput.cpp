@@ -103,7 +103,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
 
   auto cur_path = fs::canonical(fs::path(filename));
   auto new_path = ConvertFileToMeta(filename);
-  auto fp = _wfopen(new_path.c_str(), L"wt");
+  auto fp = fopen(new_path.string().c_str(), "wt");
   if (!fp)
   {
     return;
@@ -328,7 +328,7 @@ void OutputDependencyFile(const std::string & filename, const std::string & depe
 {
   auto cur_path = fs::canonical(fs::path(filename));
   auto new_path = ConvertFileToDeps(filename, dependency_dir);
-  auto fp = _wfopen(new_path.c_str(), L"wt");
+  auto fp = fopen(new_path.string().c_str(), "wt");
 
   if (!fp)
   {

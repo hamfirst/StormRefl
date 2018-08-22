@@ -511,7 +511,8 @@ int main(int argc, const char **argv)
 
   g_PrintingPolicy = &policy;
 
-  CommonOptionsParser op(argc, argv, cl::OptionCategory("StormRefl"));
+  cl::OptionCategory option_category("StormRefl");
+  CommonOptionsParser op(argc, argv, option_category);
   if (op.getSourcePathList().size() == 0)
   {
     return 0;
