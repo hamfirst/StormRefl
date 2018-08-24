@@ -3,6 +3,7 @@
 #include <cwchar>
 #include <climits>
 #include <cstdlib>
+#include <cinttypes>
 
 #include <vector>
 
@@ -974,7 +975,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
   static void Encode(const T & t, StringBuilder & sb)
   {
     char buffer[1024];
-    snprintf(buffer, sizeof(buffer), "%llu", (unsigned long long)t);
+    snprintf(buffer, sizeof(buffer), "%" PRIu64, (uint64_t)t);
     if (sizeof(T) > 4)
     {
       sb += '\"';
