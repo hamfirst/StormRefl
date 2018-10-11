@@ -24,7 +24,6 @@ using namespace llvm;
 clang::PrintingPolicy * g_PrintingPolicy = nullptr;
 llvm::cl::opt<std::string> g_DependencyDir("depsdir", cl::desc("Intermediate directory for writing out the dependency list"));
 
-
 class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
 {
 public:
