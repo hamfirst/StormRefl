@@ -182,6 +182,61 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  static %s & GetDefault() { static %s def; return def; }\n", cl.m_Name.c_str(), cl.m_Name.c_str());
     }
 
+    fprintf(fp, "\n");
+    fprintf(fp, "  static void * CastFromTypeNameHash(uint32_t type_name_hash, void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<%s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(GetNameHash() == type_name_hash) return c;\n");
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(0x%08X == type_name_hash) return static_cast<%s *>(c);\n",
+              crc32(base_class.m_Name), base_class.m_QualName.c_str());
+    }
+
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static const void * CastFromTypeNameHash(uint32_t type_name_hash, const void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<const %s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(GetNameHash() == type_name_hash) return c;\n");
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(0x%08X == type_name_hash) return static_cast<const %s *>(c);\n",
+              crc32(base_class.m_Name), base_class.m_QualName.c_str());
+    }
+
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static void * CastFromTypeIdHash(std::size_t type_id_hash, void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<%s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return c;\n", cl.m_Name.c_str());
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return static_cast<%s *>(c);\n",
+              base_class.m_QualName.c_str(), base_class.m_QualName.c_str());
+    }
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static const void * CastFromTypeIdHash(std::size_t type_id_hash, const void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<const %s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return c;\n", cl.m_Name.c_str());
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return static_cast<const %s *>(c);\n",
+              base_class.m_QualName.c_str(), base_class.m_QualName.c_str());
+    }
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
     fprintf(fp, "};\n\n");
 
     std::string base_str = cl.m_Base.size() == 0 ? "" :

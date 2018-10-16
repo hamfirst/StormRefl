@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 
 struct ReflectedParam
 {
@@ -27,11 +28,18 @@ struct ReflectedField
   std::vector<std::string> m_Attrs;
 };
 
+struct ReflectionDataBase
+{
+  std::string m_Name;
+  std::string m_QualName;
+};
+
 struct ReflectedDataClass
 {
   std::string m_Name;
   std::string m_Base;
   std::vector<ReflectedField> m_Fields;
+  std::vector<ReflectionDataBase> m_BaseClasses;
   bool m_NoDefault;
 };
 
