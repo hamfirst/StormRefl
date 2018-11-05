@@ -254,13 +254,15 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  static constexpr auto GetType() { return \"%s\"; }\n", field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr unsigned GetFieldNameHash() { return 0x%08X; }\n", crc32(field.m_Name));
       fprintf(fp, "  static constexpr unsigned GetTypeNameHash() { return 0x%08X; }\n", crc32(field.m_CannonicalType));
-      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %d%s; }\n", index, base_str.c_str());
+      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %d%s; }\n", (int)index, base_str.c_str());
       fprintf(fp, "  static constexpr auto GetMemberPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
+      fprintf(fp, "  static void * GetFromParent(void * obj) { auto ptr = static_cast<%s *>(obj); return &ptr->%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
+      fprintf(fp, "  static const void * GetFromParentConst(const void * obj) { auto ptr = static_cast<const %s *>(obj); return &ptr->%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
       fprintf(fp, "};\n\n");
 
       fprintf(fp, "template <typename Self>\n");
       fprintf(fp, "struct StormReflTypeInfo<%s>::field_data<%d%s, Self> : public StormReflTypeInfo<%s>::field_data_static<%d%s>\n", 
-        cl.m_Name.c_str(), index, base_str.c_str(), cl.m_Name.c_str(), index, base_str.c_str());
+        cl.m_Name.c_str(), (int)index, base_str.c_str(), cl.m_Name.c_str(), (int)index, base_str.c_str());
       fprintf(fp, "{\n");
       fprintf(fp, "  Self & self;\n");
       fprintf(fp, "  field_data(Self & self) : self(self) {}\n");
@@ -277,16 +279,16 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       if (field.m_Attrs.size() > 0)
       {
         fprintf(fp, "template <>\n");
-        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
+        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>\n", cl.m_Name.c_str(), (int)index, base_str.c_str());
         fprintf(fp, "{\n");
-        fprintf(fp, "  static constexpr int annotations_n = %d;\n", field.m_Attrs.size());
+        fprintf(fp, "  static constexpr int annotations_n = %d;\n", (int)field.m_Attrs.size());
         fprintf(fp, "  template <int A> struct annoation { };\n");
         fprintf(fp, "};\n\n");
 
         for (std::size_t attr_index = 0; attr_index < field.m_Attrs.size(); attr_index++)
         {
           fprintf(fp, "template <>\n");
-          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>::annoation<%d>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
+          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>::annoation<%d>\n", cl.m_Name.c_str(), (int)index, base_str.c_str(), (int)attr_index);
           fprintf(fp, "{\n");
           fprintf(fp, "  static constexpr const char * GetAnnotation() { return \"%s\"; }\n", field.m_Attrs[attr_index].c_str());
           fprintf(fp, "  static constexpr uint32_t GetAnnotationHash() { return 0x%08X; }\n", crc32(field.m_Attrs[attr_index]));

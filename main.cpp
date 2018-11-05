@@ -109,7 +109,7 @@ public:
 
       for (auto & base : decl->bases())
       {
-        class_data.m_Base = base.getType().getBaseTypeIdentifier()->getName();
+        class_data.m_Base = clang::TypeName::getFullyQualifiedName(base.getType(), m_ASTContext, *g_PrintingPolicy);
         break;
       }
 
