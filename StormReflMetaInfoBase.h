@@ -39,6 +39,34 @@ struct StormReflTypeInfo<StormRelfEmptyBase>
   static constexpr auto GetName() { return "StormRelfEmptyBase"; }
   static constexpr auto GetNameHash() { return 0; }
   static StormRelfEmptyBase & GetDefault() { static StormRelfEmptyBase def; return def; }
+
+  static void * CastFromTypeNameHash(uint32_t type_name_hash, void * ptr)
+  {
+    auto c = static_cast<StormRelfEmptyBase *>(ptr);
+    if(GetNameHash() == type_name_hash) return c;
+    return nullptr;
+  }
+
+  static const void * CastFromTypeNameHash(uint32_t type_name_hash, const void * ptr)
+  {
+    auto c = static_cast<const StormRelfEmptyBase *>(ptr);
+    if(GetNameHash() == type_name_hash) return c;
+    return nullptr;
+  }
+
+  static void * CastFromTypeIdHash(std::size_t type_id_hash, void * ptr)
+  {
+    auto c = static_cast<StormRelfEmptyBase *>(ptr);
+    if(typeid(StormRelfEmptyBase).hash_code() == type_id_hash) return c;
+    return nullptr;
+  }
+
+  static const void * CastFromTypeIdHash(std::size_t type_id_hash, const void * ptr)
+  {
+    auto c = static_cast<const StormRelfEmptyBase *>(ptr);
+    if(typeid(StormRelfEmptyBase).hash_code() == type_id_hash) return c;
+    return nullptr;
+  }
 };
 
 template <>

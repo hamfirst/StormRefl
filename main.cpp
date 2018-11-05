@@ -24,7 +24,6 @@ using namespace llvm;
 clang::PrintingPolicy * g_PrintingPolicy = nullptr;
 llvm::cl::opt<std::string> g_DependencyDir("depsdir", cl::desc("Intermediate directory for writing out the dependency list"));
 
-
 class StormReflVisitor : public RecursiveASTVisitor<StormReflVisitor>
 {
 public:
@@ -108,10 +107,44 @@ public:
       ReflectedDataClass class_data = { decl_name };
       class_data.m_NoDefault = false;
 
-      for (const auto & base : decl->bases())
+      for (auto & base : decl->bases())
       {
-        class_data.m_Base = base.getType().getBaseTypeIdentifier()->getName();
+        class_data.m_Base = clang::TypeName::getFullyQualifiedName(base.getType(), m_ASTContext, *g_PrintingPolicy);
         break;
+      }
+
+      std::queue<QualType> bases;
+      for (auto & base : decl->bases())
+      {
+        bases.emplace(base.getType());
+      }
+
+      while(bases.size() > 0)
+      {
+        auto base = bases.front();
+        bases.pop();
+
+        auto name = base.getBaseTypeIdentifier()->getName();
+        auto qual_name = clang::TypeName::getFullyQualifiedName(base, m_ASTContext, *g_PrintingPolicy);
+
+        class_data.m_BaseClasses.emplace_back(ReflectionDataBase{ name, qual_name });
+
+        auto record_type = base->getAs<RecordType>();
+        if(record_type)
+        {
+          auto record_decl = record_type->getDecl();
+          if(record_decl)
+          {
+            auto cxx_record = cast<CXXRecordDecl>(record_decl);
+            if(cxx_record)
+            {
+              for(auto & new_base : cxx_record->bases())
+              {
+                bases.emplace(new_base.getType());
+              }
+            }
+          }
+        }
       }
 
       bool accessible = decl->isStruct() ? true : false;

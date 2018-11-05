@@ -1,5 +1,4 @@
 
-
 #include "StormReflOutput.h"
 
 #include <experimental/filesystem>
@@ -183,6 +182,61 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  static %s & GetDefault() { static %s def; return def; }\n", cl.m_Name.c_str(), cl.m_Name.c_str());
     }
 
+    fprintf(fp, "\n");
+    fprintf(fp, "  static void * CastFromTypeNameHash(uint32_t type_name_hash, void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<%s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(GetNameHash() == type_name_hash) return c;\n");
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(0x%08X == type_name_hash) return static_cast<%s *>(c);\n",
+              crc32(base_class.m_Name), base_class.m_QualName.c_str());
+    }
+
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static const void * CastFromTypeNameHash(uint32_t type_name_hash, const void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<const %s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(GetNameHash() == type_name_hash) return c;\n");
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(0x%08X == type_name_hash) return static_cast<const %s *>(c);\n",
+              crc32(base_class.m_Name), base_class.m_QualName.c_str());
+    }
+
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static void * CastFromTypeIdHash(std::size_t type_id_hash, void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<%s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return c;\n", cl.m_Name.c_str());
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return static_cast<%s *>(c);\n",
+              base_class.m_QualName.c_str(), base_class.m_QualName.c_str());
+    }
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
+    fprintf(fp, "  static const void * CastFromTypeIdHash(std::size_t type_id_hash, const void * ptr)\n");
+    fprintf(fp, "  {\n");
+    fprintf(fp, "    auto c = static_cast<const %s *>(ptr);\n", cl.m_Name.c_str());
+    fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return c;\n", cl.m_Name.c_str());
+
+    for(auto & base_class : cl.m_BaseClasses)
+    {
+      fprintf(fp, "    if(typeid(%s).hash_code() == type_id_hash) return static_cast<const %s *>(c);\n",
+              base_class.m_QualName.c_str(), base_class.m_QualName.c_str());
+    }
+    fprintf(fp, "    return nullptr;\n");
+    fprintf(fp, "  }\n\n");
+
     fprintf(fp, "};\n\n");
 
     std::string base_str = cl.m_Base.size() == 0 ? "" :
@@ -200,12 +254,14 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       fprintf(fp, "  static constexpr auto GetType() { return \"%s\"; }\n", field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr unsigned GetFieldNameHash() { return 0x%08X; }\n", crc32(field.m_Name));
       fprintf(fp, "  static constexpr unsigned GetTypeNameHash() { return 0x%08X; }\n", crc32(field.m_CannonicalType));
-      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %zd%s; }\n", index, base_str.c_str());
+      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %d%s; }\n", (int)index, base_str.c_str());
       fprintf(fp, "  static constexpr auto GetMemberPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
+      fprintf(fp, "  static void * GetFromParent(void * obj) { auto ptr = static_cast<%s *>(obj); return &ptr->%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
+      fprintf(fp, "  static const void * GetFromParentConst(const void * obj) { auto ptr = static_cast<const %s *>(obj); return &ptr->%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
       fprintf(fp, "};\n\n");
 
       fprintf(fp, "template <typename Self>\n");
-      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data<%zd%s, Self> : public StormReflTypeInfo<%s>::field_data_static<%zd%s>\n",
+      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data<%d%s, Self> : public StormReflTypeInfo<%s>::field_data_static<%d%s>\n", 
         cl.m_Name.c_str(), index, base_str.c_str(), cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
       fprintf(fp, "  Self & self;\n");
@@ -223,16 +279,16 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       if (field.m_Attrs.size() > 0)
       {
         fprintf(fp, "template <>\n");
-        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%zd%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
+        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
         fprintf(fp, "{\n");
-        fprintf(fp, "  static constexpr int annotations_n = %zd;\n", field.m_Attrs.size());
+        fprintf(fp, "  static constexpr int annotations_n = %d;\n", field.m_Attrs.size());
         fprintf(fp, "  template <int A> struct annoation { };\n");
         fprintf(fp, "};\n\n");
 
         for (std::size_t attr_index = 0; attr_index < field.m_Attrs.size(); attr_index++)
         {
           fprintf(fp, "template <>\n");
-          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%zd%s>::annoation<%zd>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
+          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>::annoation<%d>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
           fprintf(fp, "{\n");
           fprintf(fp, "  static constexpr const char * GetAnnotation() { return \"%s\"; }\n", field.m_Attrs[attr_index].c_str());
           fprintf(fp, "  static constexpr uint32_t GetAnnotationHash() { return 0x%08X; }\n", crc32(field.m_Attrs[attr_index]));
