@@ -1,4 +1,5 @@
 
+
 #include "StormReflOutput.h"
 
 #include <experimental/filesystem>
@@ -128,7 +129,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
     fprintf(fp, "template <>\n");
     fprintf(fp, "struct StormReflEnumInfo<%s>\n", e.m_Name.c_str());
     fprintf(fp, "{\n");
-    fprintf(fp, "  static constexpr int elems_n = %d;\n", e.m_Elems.size());
+    fprintf(fp, "  static constexpr int elems_n = %zd;\n", e.m_Elems.size());
     fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", e.m_Name.c_str());
     fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(e.m_Name));
     fprintf(fp, "  template <int N> struct elems { };\n");
@@ -139,7 +140,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       auto & elem = e.m_Elems[index];
 
       fprintf(fp, "template <>\n");
-      fprintf(fp, "struct StormReflEnumInfo<%s>::elems<%d>\n", e.m_Name.c_str(), index);
+      fprintf(fp, "struct StormReflEnumInfo<%s>::elems<%zd>\n", e.m_Name.c_str(), index);
       fprintf(fp, "{\n");
       fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", elem.m_Name.c_str());
       fprintf(fp, "  static constexpr auto GetNameHash() { return 0x%08X; }\n", crc32(elem.m_Name));
@@ -157,7 +158,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
     if (cl.m_Base.size() == 0)
     {
       fprintf(fp, "  using MyBase = void;\n");
-      fprintf(fp, "  static constexpr int fields_n = %d;\n", cl.m_Fields.size());
+      fprintf(fp, "  static constexpr int fields_n = %zd;\n", cl.m_Fields.size());
       fprintf(fp, "  template <int N> struct field_data_static {};\n");
       fprintf(fp, "  template <int N, typename Self> struct field_data {};\n");
       fprintf(fp, "  template <int N> struct annotations { static constexpr int annotations_n = 0; template <int A> struct annoation { }; };\n");
@@ -165,7 +166,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
     else
     {
       fprintf(fp, "  using MyBase = %s;\n", cl.m_Base.c_str());
-      fprintf(fp, "  static constexpr int fields_n = %d + StormReflTypeInfo<MyBase>::fields_n;\n", cl.m_Fields.size());
+      fprintf(fp, "  static constexpr int fields_n = %zd + StormReflTypeInfo<MyBase>::fields_n;\n", cl.m_Fields.size());
       fprintf(fp, "  template <int N> struct field_data_static : public StormReflTypeInfo<MyBase>::field_data_static<N> {};\n");
       fprintf(fp, "  template <int N, typename Self> struct field_data : public StormReflTypeInfo<MyBase>::field_data<N, match_const_t<Self, MyBase>>\n");
       fprintf(fp, "  {\n");
@@ -192,19 +193,19 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       auto & field = cl.m_Fields[index];
 
       fprintf(fp, "template <>\n");
-      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data_static<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
+      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data_static<%zd%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
       fprintf(fp, "  using member_type = %s; // %s\n", field.m_Type.c_str(), field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", field.m_Name.c_str());
       fprintf(fp, "  static constexpr auto GetType() { return \"%s\"; }\n", field.m_CannonicalType.c_str());
       fprintf(fp, "  static constexpr unsigned GetFieldNameHash() { return 0x%08X; }\n", crc32(field.m_Name));
       fprintf(fp, "  static constexpr unsigned GetTypeNameHash() { return 0x%08X; }\n", crc32(field.m_CannonicalType));
-      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %d%s; }\n", index, base_str.c_str());
+      fprintf(fp, "  static constexpr auto GetFieldIndex() { return %zd%s; }\n", index, base_str.c_str());
       fprintf(fp, "  static constexpr auto GetMemberPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), field.m_Name.c_str());
       fprintf(fp, "};\n\n");
 
       fprintf(fp, "template <typename Self>\n");
-      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data<%d%s, Self> : public StormReflTypeInfo<%s>::field_data_static<%d%s>\n", 
+      fprintf(fp, "struct StormReflTypeInfo<%s>::field_data<%zd%s, Self> : public StormReflTypeInfo<%s>::field_data_static<%zd%s>\n",
         cl.m_Name.c_str(), index, base_str.c_str(), cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
       fprintf(fp, "  Self & self;\n");
@@ -222,16 +223,16 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       if (field.m_Attrs.size() > 0)
       {
         fprintf(fp, "template <>\n");
-        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
+        fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%zd%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
         fprintf(fp, "{\n");
-        fprintf(fp, "  static constexpr int annotations_n = %d;\n", field.m_Attrs.size());
+        fprintf(fp, "  static constexpr int annotations_n = %zd;\n", field.m_Attrs.size());
         fprintf(fp, "  template <int A> struct annoation { };\n");
         fprintf(fp, "};\n\n");
 
         for (std::size_t attr_index = 0; attr_index < field.m_Attrs.size(); attr_index++)
         {
           fprintf(fp, "template <>\n");
-          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%d%s>::annoation<%d>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
+          fprintf(fp, "struct StormReflTypeInfo<%s>::annotations<%zd%s>::annoation<%zd>\n", cl.m_Name.c_str(), index, base_str.c_str(), attr_index);
           fprintf(fp, "{\n");
           fprintf(fp, "  static constexpr const char * GetAnnotation() { return \"%s\"; }\n", field.m_Attrs[attr_index].c_str());
           fprintf(fp, "  static constexpr uint32_t GetAnnotationHash() { return 0x%08X; }\n", crc32(field.m_Attrs[attr_index]));
@@ -250,13 +251,13 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
 
     if (cl.m_Base.size() == 0)
     {
-      fprintf(fp, "  static constexpr int funcs_n = %d;\n", cl.m_Funcs.size());
+      fprintf(fp, "  static constexpr int funcs_n = %zd;\n", cl.m_Funcs.size());
       fprintf(fp, "  template <int N> struct func_data_static {};\n");
     }
     else
     {
       fprintf(fp, "  using MyBase = %s;\n", cl.m_Base.c_str());
-      fprintf(fp, "  static constexpr int funcs_n = %d + StormReflFuncInfo<MyBase>::funcs_n;\n", cl.m_Funcs.size());
+      fprintf(fp, "  static constexpr int funcs_n = %zd + StormReflFuncInfo<MyBase>::funcs_n;\n", cl.m_Funcs.size());
       fprintf(fp, "  template <int N> struct func_data_static : public StormReflFuncInfo<MyBase>::func_data_static<N> {};\n");
     }
 
@@ -270,16 +271,16 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       auto & func = cl.m_Funcs[index];
 
       fprintf(fp, "template <>\n");
-      fprintf(fp, "struct StormReflFuncInfo<%s>::func_data_static<%d%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
+      fprintf(fp, "struct StormReflFuncInfo<%s>::func_data_static<%zd%s>\n", cl.m_Name.c_str(), index, base_str.c_str());
       fprintf(fp, "{\n");
       fprintf(fp, "  using func_ptr_type = %s;\n", func.m_FullSignature.c_str());
       fprintf(fp, "  using return_type = %s;\n", func.m_ReturnType.c_str());
-      fprintf(fp, "  static constexpr int params_n = %d;\n", func.m_Params.size());
+      fprintf(fp, "  static constexpr int params_n = %zd;\n", func.m_Params.size());
       fprintf(fp, "  static constexpr auto GetName() { return \"%s\"; }\n", func.m_Name.c_str());
       fprintf(fp, "  static constexpr auto GetReturnType() { return \"%s\"; }\n", func.m_ReturnType.c_str());
       fprintf(fp, "  static constexpr unsigned GetFunctionNameHash() { return 0x%08X; }\n", crc32(func.m_Name));
       fprintf(fp, "  static constexpr unsigned GetReturnTypeNameHash() { return 0x%08X; }\n", crc32(func.m_ReturnType));
-      fprintf(fp, "  static constexpr auto GetFunctionIndex() { return %d%s; }\n", index, base_str.c_str());
+      fprintf(fp, "  static constexpr auto GetFunctionIndex() { return %zd%s; }\n", index, base_str.c_str());
       fprintf(fp, "  static constexpr func_ptr_type GetFunctionPtr() { return &%s::%s; }\n", cl.m_Name.c_str(), func.m_Name.c_str());
       fprintf(fp, "  template <int i>\n");
       fprintf(fp, "  struct param_info { };\n");
@@ -289,7 +290,7 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
       {
         auto & param = func.m_Params[param_index];
         fprintf(fp, "template <>\n");
-        fprintf(fp, "struct StormReflFuncInfo<%s>::func_data_static<%d%s>::param_info<%d>\n",
+        fprintf(fp, "struct StormReflFuncInfo<%s>::func_data_static<%zd%s>::param_info<%zd>\n",
           cl.m_Name.c_str(), index, base_str.c_str(), param_index);
         fprintf(fp, "{\n");
         fprintf(fp, "  using param_type = %s;\n", param.m_Type.c_str());
@@ -306,14 +307,14 @@ void OutputReflectedFile(const std::string & filename, const std::vector<Reflect
   fprintf(fp, "{\n");
   fprintf(fp, "  struct %s\n", stem.c_str());
   fprintf(fp, "  {\n");
-  fprintf(fp, "    static const int types_n = %d;\n", class_data.size());
+  fprintf(fp, "    static const int types_n = %zd;\n", class_data.size());
   fprintf(fp, "    template <int i> struct type_info { using type = void; };\n");
   fprintf(fp, "  };\n\n");
 
   for (std::size_t index = 0; index < class_data.size(); index++)
   {
     fprintf(fp, "  template <>\n");
-    fprintf(fp, "  struct %s::type_info<%d>\n", stem.c_str(), index);
+    fprintf(fp, "  struct %s::type_info<%zd>\n", stem.c_str(), index);
     fprintf(fp, "  {\n");
     fprintf(fp, "    using type = ::%s;\n", class_data[index].m_Name.c_str());
     fprintf(fp, "  };\n\n");
