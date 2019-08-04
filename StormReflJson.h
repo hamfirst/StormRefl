@@ -12,13 +12,29 @@
 
 #pragma warning(disable:4996)
 
-inline bool StormReflJsonParseOverValue(const char * str, const char *& result);
+struct StormReflStringViewProxy;
+
+template <typename CharPtr>
+inline bool StormReflJsonParseOverValue(CharPtr str, CharPtr & result);
+
 
 template <class T>
 bool StormReflParseJson(T & t, const char * str, const char *& result, bool additive = false);
 
 template <class T>
 bool StormReflParseJson(T & t, const char * str, bool additive = false);
+
+template <class T>
+bool StormReflParseJson(T & t, const std::string_view & str, std::string_view & result, bool additive = false);
+
+template <class T>
+bool StormReflParseJson(T & t, const std::string_view & str, bool additive = false);
+
+template <class T>
+bool StormReflParseJson(T & t, StormReflStringViewProxy str, StormReflStringViewProxy & result, bool additive = false);
+
+template <class T>
+bool StormReflParseJson(T & t, StormReflStringViewProxy str, bool additive = false);
 
 namespace StormReflJsonHelpers
 {
@@ -33,7 +49,8 @@ namespace StormReflJsonHelpers
   }
 }
 
-inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
+template <typename CharPtr>
+inline void StormReflJsonAdvanceWhiteSpace(CharPtr & str)
 {
   char c = *str;
   while (true)
@@ -53,7 +70,8 @@ inline void StormReflJsonAdvanceWhiteSpace(const char * & str)
   }
 }
 
-inline bool StormReflJsonMatchStr(const char * str, const char *& result, const char * match)
+template <typename CharPtr>
+inline bool StormReflJsonMatchStr(CharPtr str, CharPtr& result, const char * match)
 {
   while (*match != 0)
   {
@@ -70,7 +88,8 @@ inline bool StormReflJsonMatchStr(const char * str, const char *& result, const 
   return true;
 }
 
-inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseStringHash(uint32_t & hash, CharPtr str, CharPtr& result)
 {
   hash = crc32begin();
 
@@ -170,10 +189,11 @@ inline bool StormReflJsonParseStringHash(uint32_t & hash, const char * str, cons
   }
 }
 
-inline bool StormReflJsonParseOverNumber(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverNumber(CharPtr str, CharPtr& result)
 {
   StormReflJsonAdvanceWhiteSpace(str);
-  const char * start = str;
+  auto start = str;
 
   if (*str == '-' || *str == '+')
   {
@@ -217,7 +237,8 @@ inline bool StormReflJsonParseOverNumber(const char * str, const char *& result)
   return true;
 }
 
-inline bool StormReflJsonParseOverString(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverString(CharPtr str, CharPtr& result)
 {
   StormReflJsonAdvanceWhiteSpace(str);
   if (*str != '\"')
@@ -278,22 +299,26 @@ inline bool StormReflJsonParseOverString(const char * str, const char *& result)
   }
 }
 
-inline bool StormReflJsonParseOverTrue(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverTrue(CharPtr str, CharPtr& result)
 {
   return StormReflJsonMatchStr(str, result, "true");
 }
 
-inline bool StormReflJsonParseOverFalse(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverFalse(CharPtr str, CharPtr& result)
 {
   return StormReflJsonMatchStr(str, result, "false");
 }
 
-inline bool StormReflJsonParseOverNull(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverNull(CharPtr str, CharPtr& result)
 {
   return StormReflJsonMatchStr(str, result, "null");
 }
 
-inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverObject(CharPtr str, CharPtr& result)
 {
   if (*str != '{')
   {
@@ -345,7 +370,8 @@ inline bool StormReflJsonParseOverObject(const char * str, const char *& result)
   }
 }
 
-inline bool StormReflJsonParseOverArray(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverArray(CharPtr str, CharPtr& result)
 {
   if (*str != '[')
   {
@@ -385,7 +411,8 @@ inline bool StormReflJsonParseOverArray(const char * str, const char *& result)
   }
 }
 
-inline bool StormReflJsonParseOverValue(const char * str, const char *& result)
+template <typename CharPtr>
+inline bool StormReflJsonParseOverValue(CharPtr str, CharPtr& result)
 {
   StormReflJsonAdvanceWhiteSpace(str);
   if (StormReflJsonParseOverNumber(str, result))
@@ -531,7 +558,8 @@ struct StormReflJson<T[i], void>
     sb += ']';
   }
 
-  static bool Parse(T(&t)[i], const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T(&t)[i], CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '[')
@@ -699,7 +727,8 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
     StormReflJson<T>::Encode(t, sb);
   }
 
-  static bool Parse(T & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '{')
@@ -735,7 +764,11 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 
             if (set_field == false)
             {
-              f.SetDefault();
+              using FieldType = decltype(f);
+              if constexpr(StormReflHasDefault<T>::value && FieldType::HasDefault())
+              {
+                f.SetDefault();
+              }
             }
           };
 
@@ -761,7 +794,7 @@ struct StormReflJson<T, typename std::enable_if<StormReflCheckReflectable<T>::va
 
       StormReflJsonAdvanceWhiteSpace(str);
       bool parsed_field = false;
-      const char * result_str = str;
+      CharPtr result_str = str;
 
       auto field_visitor = [&](auto f)
       {
@@ -826,7 +859,8 @@ struct StormReflJson<T, typename std::enable_if<std::is_enum<T>::value>::type>
     sb += "\"\"";
   }
 
-  static bool Parse(T & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '\"')
@@ -856,8 +890,8 @@ struct StormReflJson<T, typename std::enable_if<std::is_enum<T>::value>::type>
   }
 };
 
-template <class IntType, class ParseType>
-static IntType StormReflParseDigits(const char * & str, bool negative)
+template <class IntType, class ParseType, typename CharPtr>
+static IntType StormReflParseDigits(CharPtr & str, bool negative)
 {
   if (negative && std::is_unsigned<ParseType>::value)
   {
@@ -909,8 +943,8 @@ static IntType StormReflParseDigits(const char * & str, bool negative)
   return val;
 }
 
-template <class T, class IntType>
-static IntType StormReflApplyExponent(IntType val, int8_t exp, bool negative, const char * fractional_str)
+template <class T, class IntType, typename CharPtr>
+static IntType StormReflApplyExponent(IntType val, int8_t exp, bool negative, CharPtr fractional_str)
 {
   if (exp == 1)
   {
@@ -942,7 +976,7 @@ static IntType StormReflApplyExponent(IntType val, int8_t exp, bool negative, co
     val *= 10;
 
     IntType add_val;
-    if (fractional_str != nullptr && *fractional_str >= '0' && *fractional_str <= '9')
+    if (fractional_str && *fractional_str >= '0' && *fractional_str <= '9')
     {
       add_val = *fractional_str - '0';
       fractional_str++;
@@ -1000,7 +1034,8 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     sb += "0";
   }
 
-  static bool Parse(T & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
 
@@ -1040,7 +1075,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     }
 
     T val = StormReflParseDigits<T, T>(str, negative);
-    const char * fractional_part = nullptr;
+    CharPtr fractional_part = nullptr;
 
     if (*str == '.')
     {
@@ -1138,7 +1173,8 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     sb += "0";
   }
 
-  static bool Parse(T & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T & t, CharPtr str, CharPtr& result, bool additive)
   {
     using IntType = std::make_unsigned_t<T>;
 
@@ -1180,7 +1216,7 @@ struct StormReflJson<T, typename std::enable_if<std::is_integral<T>::value && st
     }
 
     IntType val = StormReflParseDigits<IntType, T>(str, negative);
-    const char * fractional_part = nullptr;
+    CharPtr fractional_part = nullptr;
 
     if (*str == '.')
     {
@@ -1262,10 +1298,11 @@ struct StormReflJson<T, typename std::enable_if<std::is_floating_point<T>::value
     Encode(t, sb);
   }
 
-  static bool Parse(T & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(T & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
-    const char * start = str;
+    auto start = str;
 
     if (*str == '-' || *str == '+')
     {
@@ -1336,7 +1373,8 @@ struct StormReflJson<bool, void>
     sb += "false";
   }
 
-  static bool Parse(bool & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(bool & t, CharPtr str, CharPtr& result, bool additive)
   {
     if (StormReflJsonMatchStr(str, result, "true"))
     {
@@ -1404,6 +1442,72 @@ void StormReflEncodeJsonWithMetaData(const T & t, const Meta & meta, StringBuild
 
 }
 
+struct StormReflStringViewProxy
+{
+  const char * start;
+  const char * end;
+
+  StormReflStringViewProxy()
+  {
+    start = nullptr;
+    end = nullptr;
+  }
+
+  StormReflStringViewProxy(const char * ptr)
+  {
+    if(ptr)
+    {
+      start = ptr;
+      end = ptr + strlen(ptr);
+    }
+    else
+    {
+      start = nullptr;
+      end = nullptr;
+    }
+  }
+
+  StormReflStringViewProxy(const char * s, const char * e)
+  {
+    start = s;
+    end = e;
+  }
+
+  StormReflStringViewProxy(const StormReflStringViewProxy & rhs) = default;
+  StormReflStringViewProxy(StormReflStringViewProxy && rhs) = default;
+  StormReflStringViewProxy & operator = (const StormReflStringViewProxy & rhs) = default;
+  StormReflStringViewProxy & operator = (StormReflStringViewProxy && rhs) = default;
+
+  char operator *() const
+  {
+    return start != end ? *start : 0;
+  }
+
+  StormReflStringViewProxy & operator++()
+  {
+    if(start != end)
+    {
+      ++start;
+    }
+    return *this;
+  }
+
+  StormReflStringViewProxy operator++(int)
+  {
+    auto tmp = *this;
+    if(start != end)
+    {
+      ++start;
+    }
+    return tmp;
+  }
+
+  operator bool() const
+  {
+    return start != nullptr;
+  }
+};
+
 template <class T>
 bool StormReflParseJson(T & t, const char * str, const char *& result, bool additive)
 {
@@ -1415,4 +1519,47 @@ bool StormReflParseJson(T & t, const char * str, bool additive)
 {
   return StormReflJson<T>::Parse(t, str, str, additive);
 }
+
+template <class T>
+bool StormReflParseJson(T & t, const std::string_view & str, std::string_view & result, bool additive)
+{
+  StormReflStringViewProxy proxy(str.data(), str.data() + str.length());
+  StormReflStringViewProxy out;
+
+  if(StormReflJson<T>::Parse(t, proxy, out, additive))
+  {
+    result = std::string_view(out.start, out.end - out.start);
+    return true;
+  }
+
+  return false;
+}
+
+template <class T>
+bool StormReflParseJson(T & t, const std::string_view & str, bool additive)
+{
+  StormReflStringViewProxy proxy(str.data(), str.data() + str.length());
+  StormReflStringViewProxy out;
+
+  if(StormReflJson<T>::Parse(t, proxy, out, additive))
+  {
+    return true;
+  }
+
+  return false;
+}
+
+
+template <class T>
+bool StormReflParseJson(T & t, StormReflStringViewProxy str, StormReflStringViewProxy & result, bool additive)
+{
+  return StormReflJson<T>::Parse(t, str, result, additive);
+}
+
+template <class T>
+bool StormReflParseJson(T & t, StormReflStringViewProxy str, bool additive)
+{
+  return StormReflJson<T>::Parse(t, str, str, additive);
+}
+
 

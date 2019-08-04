@@ -35,7 +35,6 @@ namespace StormReflMetaHelpers
   template <> struct StormReflCheckReflectable<float, void> { static const bool value = false; };
   template <> struct StormReflCheckReflectable<double, void> { static const bool value = false; };
 
-
   template <class C, class Visitor, int I>
   struct StormReflFieldIterator
   {

@@ -18,4 +18,4 @@
 
 #define STORM_REFL static const bool is_reflectable = true;
 #define STORM_REFL_FUNCS static const bool is_functional = true;
-
+#define STORM_REFL_NO_BASE static const bool no_refl_base = true;

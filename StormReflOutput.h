@@ -26,6 +26,7 @@ struct ReflectedField
   std::string m_CannonicalType;
 
   std::vector<std::string> m_Attrs;
+  bool m_IsArray = false;
 };
 
 struct ReflectionDataBase

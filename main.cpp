@@ -21,6 +21,7 @@ using namespace clang::tooling;
 using namespace llvm;
 
 
+
 clang::PrintingPolicy * g_PrintingPolicy = nullptr;
 llvm::cl::opt<std::string> g_DependencyDir("depsdir", cl::desc("Intermediate directory for writing out the dependency list"));
 
@@ -72,6 +73,7 @@ public:
     auto decl_name = std::string(decl->getName());
 
     bool is_reflectable = false;
+    bool is_no_base = false;
     for (const auto & sub_decl : decl->decls())
     {
       auto var_decl = dyn_cast<VarDecl>(sub_decl);
@@ -93,7 +95,28 @@ public:
             if (is_true)
             {
               is_reflectable = true;
-              break;
+              continue;
+            }
+          }
+        }
+
+        if (var_decl->isStaticDataMember() && var_decl->getNameAsString() == "no_refl_base" && var_decl->hasInit())
+        {
+          auto qual_type = var_decl->getType();
+          if (qual_type.getAsString() != "const _Bool")
+          {
+            continue;
+          }
+
+          auto init_expr = var_decl->getInit();
+
+          bool is_true = false;
+          if (init_expr->EvaluateAsBooleanCondition(is_true, m_ASTContext))
+          {
+            if (is_true)
+            {
+              is_no_base = true;
+              continue;
             }
           }
         }
@@ -107,40 +130,43 @@ public:
       ReflectedDataClass class_data = { decl_name };
       class_data.m_NoDefault = false;
 
-      for (auto & base : decl->bases())
+      if(is_no_base == false)
       {
-        class_data.m_Base = clang::TypeName::getFullyQualifiedName(base.getType(), m_ASTContext, *g_PrintingPolicy);
-        break;
-      }
-
-      std::queue<QualType> bases;
-      for (auto & base : decl->bases())
-      {
-        bases.emplace(base.getType());
-      }
-
-      while(bases.size() > 0)
-      {
-        auto base = bases.front();
-        bases.pop();
-
-        auto name = base.getBaseTypeIdentifier()->getName();
-        auto qual_name = clang::TypeName::getFullyQualifiedName(base, m_ASTContext, *g_PrintingPolicy);
-
-        class_data.m_BaseClasses.emplace_back(ReflectionDataBase{ name, qual_name });
-
-        auto record_type = base->getAs<RecordType>();
-        if(record_type)
+        for (auto &base : decl->bases())
         {
-          auto record_decl = record_type->getDecl();
-          if(record_decl)
+          class_data.m_Base = clang::TypeName::getFullyQualifiedName(base.getType(), m_ASTContext, *g_PrintingPolicy);
+          break;
+        }
+
+        std::queue<QualType> bases;
+        for (auto &base : decl->bases())
+        {
+          bases.emplace(base.getType());
+        }
+
+        while (bases.size() > 0)
+        {
+          auto base = bases.front();
+          bases.pop();
+
+          auto name = base.getBaseTypeIdentifier()->getName();
+          auto qual_name = clang::TypeName::getFullyQualifiedName(base, m_ASTContext, *g_PrintingPolicy);
+
+          class_data.m_BaseClasses.emplace_back(ReflectionDataBase{name, qual_name});
+
+          auto record_type = base->getAs<RecordType>();
+          if (record_type)
           {
-            auto cxx_record = cast<CXXRecordDecl>(record_decl);
-            if(cxx_record)
+            auto record_decl = record_type->getDecl();
+            if (record_decl)
             {
-              for(auto & new_base : cxx_record->bases())
+              auto cxx_record = cast<CXXRecordDecl>(record_decl);
+              if (cxx_record)
               {
-                bases.emplace(new_base.getType());
+                for (auto &new_base : cxx_record->bases())
+                {
+                  bases.emplace(new_base.getType());
+                }
               }
             }
           }
@@ -173,6 +199,13 @@ public:
           auto name_str = std::string(field->getName());
 
           bool ignore_field = false;
+          bool is_array = false;
+
+          auto type = qual_type.getTypePtrOrNull();
+          if(type && dyn_cast<ConstantArrayType>(type))
+          {
+            is_array = true;
+          }
 
           std::vector<std::string> annotations;
           if (field->hasAttrs())
@@ -204,10 +237,9 @@ public:
 
           if (!ignore_field)
           {
-            class_data.m_Fields.emplace_back(ReflectedField{ name_str, type_str, cannon_str, annotations });
+            class_data.m_Fields.emplace_back(ReflectedField{ name_str, type_str, cannon_str, annotations, is_array });
           }
         }
-
 
         //printf("Field: %s, %s\n", name_str.c_str(), type_str.c_str());
       }
@@ -218,10 +250,10 @@ public:
 
   void ProcessFunctionClass(CXXRecordDecl * decl)
   {
-
     auto decl_name = std::string(decl->getName());
 
     bool is_functional = false;
+    bool is_no_base = false;
     for (const auto & sub_decl : decl->decls())
     {
       auto var_decl = dyn_cast<VarDecl>(sub_decl);
@@ -243,7 +275,28 @@ public:
             if (is_true)
             {
               is_functional = true;
-              break;
+              continue;
+            }
+          }
+        }
+
+        if (var_decl->isStaticDataMember() && var_decl->getNameAsString() == "no_refl_base" && var_decl->hasInit())
+        {
+          auto qual_type = var_decl->getType();
+          if (qual_type.getAsString() != "const _Bool")
+          {
+            continue;
+          }
+
+          auto init_expr = var_decl->getInit();
+
+          bool is_true = false;
+          if (init_expr->EvaluateAsBooleanCondition(is_true, m_ASTContext))
+          {
+            if (is_true)
+            {
+              is_no_base = true;
+              continue;
             }
           }
         }
@@ -254,10 +307,13 @@ public:
     {
       ReflectedFunctionalClass class_data = { decl_name };
 
-      for (const auto & base : decl->bases())
+      if(is_no_base == false)
       {
-        class_data.m_Base = base.getType().getBaseTypeIdentifier()->getName();
-        break;
+        for (const auto & base : decl->bases())
+        {
+          class_data.m_Base = base.getType().getBaseTypeIdentifier()->getName();
+          break;
+        }
       }
 
       bool accessible = decl->isStruct() ? true : false;

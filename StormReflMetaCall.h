@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "StormReflMetaCallHelpers.h"
 
 template <typename C>

@@ -11,6 +11,9 @@
 template <class T>
 using StormReflCheckReflectable = StormReflMetaHelpers::StormReflCheckReflectable<T>;
 
+template <class T>
+using StormReflHasDefault = StormReflMetaHelpers::StormReflHasDefault<T>;
+
 template <class C>
 constexpr int StormReflGetFieldCount()
 {

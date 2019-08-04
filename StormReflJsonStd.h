@@ -84,7 +84,8 @@ struct StormReflJson<std::vector<T>, void>
     sb += "[]";
   }
 
-  static bool Parse(std::vector<T> & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(std::vector<T> & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     t.clear();
@@ -245,7 +246,8 @@ struct StormReflJson<std::map<K, T>, void>
     sb += "{}";
   }
 
-  static bool Parse(std::map<K, T> & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(std::map<K, T> & t, CharPtr str, CharPtr& result, bool additive)
   {
     if (additive == false)
     {
@@ -343,7 +345,8 @@ struct StormReflJson<std::string, void>
     sb += "\"\"";
   }
 
-  static bool Parse(std::string & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(std::string & t, CharPtr str, CharPtr& result, bool additive)
   {
     t.clear();
     StormReflJsonAdvanceWhiteSpace(str);
@@ -481,7 +484,8 @@ struct StormReflJson<std::pair<First, Second>, void>
     sb += ']';
   }
 
-  static bool Parse(std::pair<First, Second> & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(std::pair<First, Second> & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '[')
@@ -556,7 +560,8 @@ namespace StormReflJsonHelpers
       TupleArg<N - 1, Types...>::SerializeDefault(sb);
     }
 
-    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
+    template <typename CharPtr>
+    static bool Parse(std::tuple<Types...> & t, CharPtr str, CharPtr& result, bool additive)
     {
       using elem_type = std::decay_t<typename std::tuple_element<ElemIndex, std::tuple<Types...>>::type>;
       if (StormReflJson<elem_type>::Parse(std::template get<ElemIndex>(t), str, str, additive) == false)
@@ -588,7 +593,8 @@ namespace StormReflJsonHelpers
 
     }
 
-    static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
+    template <typename CharPtr>
+    static bool Parse(std::tuple<Types...> & t, CharPtr str, CharPtr& result, bool additive)
     {
       result = str;
       return true;
@@ -623,7 +629,8 @@ struct StormReflJson<std::tuple<Types...>, void>
     sb += " ]";
   }
 
-  static bool Parse(std::tuple<Types...> & t, const char * str, const char *& result, bool additive)
+  template <typename CharPtr>
+  static bool Parse(std::tuple<Types...> & t, CharPtr str, CharPtr& result, bool additive)
   {
     StormReflJsonAdvanceWhiteSpace(str);
     if (*str != '[')
